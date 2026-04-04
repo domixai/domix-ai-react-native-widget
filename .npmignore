@@ -1,15 +1,15 @@
-# Logs
-*.log
-npm-debug.log
+# Exclude Example app
+Example/
 
-# Dependency directory
-node_modules
+# Exclude source files if you only want to ship index
+# (Though for RN widgets, shipping src is often fine, but we should exclude the test/tgz files)
+*.tgz
+.eslintrc.js
+.prettierrc.js
+CLAUDE.md
+package-lock.json
 
-# Runtime data
-tmp
-
-# Examples
-examples
-examples/
-
-.DS_Store
+# Exclude local configs
+.gemini/
+.git/
+node_modules/

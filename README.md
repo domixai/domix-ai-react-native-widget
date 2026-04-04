@@ -9,7 +9,7 @@ domix-ai-react-native-widget
 
 - **Supported Domix AI version:** 1.0.0+
 
-<img src="https://user-images.githubusercontent.com/12408980/203909820-938136a6-bf5b-433e-9f68-d7f28a1303be.png" alt="screenshot" width="350">
+<img src="screenshot.png" alt="screenshot" width="350">
 
 ### Installation
 
