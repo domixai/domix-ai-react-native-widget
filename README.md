@@ -38,10 +38,9 @@ cd ios && pod install
 ### How to use
 
 1. Create a website channel in Domix AI server.
-2. Replace `websiteToken` prop and `baseUrl`.
+2. Replace `websiteToken`.
 
 ```javascript
-
 import React, { useState } from 'react';
 
 import { StyleSheet, View, SafeAreaView, TouchableOpacity, Text } from 'react-native';
@@ -58,10 +57,11 @@ const App = () => {
     identifier_hash: '',
   };
   const customAttributes = { accountId: 1, pricingPlan: 'paid', status: 'active' };
+  const conversationCustomAttributes = { orderId: 1234, status: 'pending' };
   const websiteToken = 'WEBSITE_TOKEN';
-  const baseUrl = 'DOMIX_AI_INSTALLATION_URL';
+  const baseUrl = 'https://chat.domix.ai';
   const locale = 'en';
-  const colorScheme='dark'
+  const colorScheme = 'dark';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,20 +70,19 @@ const App = () => {
           <Text style={styles.buttonText}>Open widget</Text>
         </TouchableOpacity>
       </View>
-      {
-        showWidget&&
-          <DomixAIWidget
-            websiteToken={websiteToken}
-            locale={locale}
-            baseUrl={baseUrl}
-            closeModal={() => toggleWidget(false)}
-            isModalVisible={showWidget}
-            user={user}
-            customAttributes={customAttributes}
-            colorScheme={colorScheme}
-          />
-      }
-
+      {showWidget && (
+        <DomixAIWidget
+          websiteToken={websiteToken}
+          locale={locale}
+          baseUrl={baseUrl}
+          closeModal={() => toggleWidget(false)}
+          isModalVisible={showWidget}
+          user={user}
+          customAttributes={customAttributes}
+          conversationCustomAttributes={conversationCustomAttributes}
+          colorScheme={colorScheme}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -117,7 +116,6 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-
 ```
 
 You're done!
@@ -177,7 +175,13 @@ The whole example is in the `/Example` folder.
    <td>customAttributes</td>
     <td> {} </td>
     <td> Object </td>
-    <td>Additional information about the customer</td>
+    <td>Additional information about the customer (Contact)</td>
+  </tr>
+  <tr>
+   <td>conversationCustomAttributes</td>
+    <td> {} </td>
+    <td> Object </td>
+    <td>Additional information about the conversation</td>
   </tr>
  </tbody>
 </table>

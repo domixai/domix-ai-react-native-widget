@@ -4,6 +4,7 @@ export const POST_MESSAGE_EVENTS = {
   SET_CUSTOM_ATTRIBUTES: 'set-custom-attributes',
   SET_USER: 'set-user',
   SET_COLOR_SCHEME: 'set-color-scheme',
+  SET_CONVERSATION_CUSTOM_ATTRIBUTES: 'set-conversation-custom-attributes',
 };
 export const COLOR_WHITE = '#fff';
 export const BG_COLOR_WHITE = '#FFFF';

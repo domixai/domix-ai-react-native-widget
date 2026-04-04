@@ -24,6 +24,10 @@ const App = () => {
     pricingPlan: 'paid',
     status: 'active',
   };
+  const conversationCustomAttributes = {
+    orderId: 1,
+    status: 'pending',
+  };
   const websiteToken = 'RY3LaFtwmkPhDdZVmRd4ektW';
   const baseUrl = 'https://staging.domix.ai';
   const [locale, setLocale] = useState('en');
@@ -86,6 +90,7 @@ const App = () => {
         isModalVisible={showWidget}
         user={user}
         customAttributes={customAttributes}
+        conversationCustomAttributes={conversationCustomAttributes}
       />
     </SafeAreaView>
   );

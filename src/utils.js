@@ -25,7 +25,13 @@ export const createDomixPostMessage = (object) => {
 
 export const getMessage = (data) => data.replace(DOMIX_PREFIX, '');
 
-export const generateScripts = ({ colorScheme, user, locale, customAttributes }) => {
+export const generateScripts = ({
+  colorScheme,
+  user,
+  locale,
+  customAttributes,
+  conversationCustomAttributes,
+}) => {
   let script = '';
   if (user) {
     const userObject = {
@@ -45,6 +51,13 @@ export const generateScripts = ({ colorScheme, user, locale, customAttributes })
       customAttributes,
     };
     script += createDomixPostMessage(attributeObject);
+  }
+  if (conversationCustomAttributes) {
+    const conversationAttributeObject = {
+      event: POST_MESSAGE_EVENTS.SET_CONVERSATION_CUSTOM_ATTRIBUTES,
+      customAttributes: conversationCustomAttributes,
+    };
+    script += createDomixPostMessage(conversationAttributeObject);
   }
   if (colorScheme) {
     const themeObject = { event: POST_MESSAGE_EVENTS.SET_COLOR_SCHEME, darkMode: colorScheme };
