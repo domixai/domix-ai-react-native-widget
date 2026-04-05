@@ -65,6 +65,22 @@ export const generateScripts = ({
   }
   return script;
 };
+
+export const generateSendMessageScript = (content) => {
+  const sendMessageObject = {
+    event: POST_MESSAGE_EVENTS.SEND_MESSAGE,
+    content,
+  };
+  return createDomixPostMessage(sendMessageObject);
+};
+
+export const generateResetScript = () => {
+  const resetObject = {
+    event: POST_MESSAGE_EVENTS.RESET,
+  };
+  return createDomixPostMessage(resetObject);
+};
+
 export const storeHelper = {
   getCookie: async () => {
     const cookie = await AsyncStorage.getItem('cwCookie');
@@ -72,6 +88,9 @@ export const storeHelper = {
   },
   storeCookie: async (value) => {
     await AsyncStorage.setItem('cwCookie', value);
+  },
+  removeCookie: async () => {
+    await AsyncStorage.removeItem('cwCookie');
   },
 };
 

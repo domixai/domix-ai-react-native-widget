@@ -186,6 +186,44 @@ The whole example is in the `/Example` folder.
  </tbody>
 </table>
 
+### Methods
+
+You can use a reference to the `DomixAIWidget` component to call methods like `sendMessage` and `reset`.
+
+```javascript
+const widgetRef = useRef(null);
+
+// To send a message
+widgetRef.current.sendMessage('Hello from React Native!');
+
+// To reset the session
+widgetRef.current.reset();
+
+// Usage in component
+<DomixAIWidget
+  ref={widgetRef}
+  {...props}
+/>
+```
+
+<table class="table">
+<thead><tr>
+  <th>Method Name</th><th>Parameters</th><th>Description</th>
+</tr></thead>
+<tbody>
+  <tr>
+    <td>sendMessage</td>
+    <td>message (String)</td>
+    <td>Sends a message on behalf of the user.</td>
+  </tr>
+  <tr>
+    <td>reset</td>
+    <td>-</td>
+    <td>Resets the widget session and clears cookies.</td>
+  </tr>
+</tbody>
+</table>
+
 ## Feedback & Contributing
 
 Feel free to send us feedback.

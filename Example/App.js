@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import DomixAIWidget from 'domix-ai-react-native-widget';
 
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 const App = () => {
+  const widgetRef = useRef(null);
   const [showWidget, toggleWidget] = useState(false);
   const [user, setUser] = useState({
     identifier: 'sandra.lawrence@example.com',
@@ -80,8 +81,27 @@ const App = () => {
           onPress={() => toggleWidget(true)}>
           <Text style={styles.buttonText}>Open Domix AI Widget</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 10, backgroundColor: '#4CAF50' }]}
+          onPress={() => {
+            if (widgetRef.current) {
+              widgetRef.current.sendMessage('Hello! This is a test message.');
+            }
+          }}>
+          <Text style={styles.buttonText}>Send Test Message</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 10, backgroundColor: '#f44336' }]}
+          onPress={() => {
+            if (widgetRef.current) {
+              widgetRef.current.reset();
+            }
+          }}>
+          <Text style={styles.buttonText}>Reset Session</Text>
+        </TouchableOpacity>
       </View>
       <DomixAIWidget
+        ref={widgetRef}
         websiteToken={websiteToken}
         locale={locale}
         baseUrl={baseUrl}

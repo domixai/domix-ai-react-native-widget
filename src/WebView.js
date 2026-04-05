@@ -1,8 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, Linking, View, ActivityIndicator, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import PropTypes from 'prop-types';
-import { isJsonString, storeHelper, generateScripts, getMessage } from './utils';
+import {
+  isJsonString,
+  storeHelper,
+  generateScripts,
+  getMessage,
+  generateSendMessageScript,
+} from './utils';
 const propTypes = {
   websiteToken: PropTypes.string.isRequired,
   baseUrl: PropTypes.string.isRequired,
@@ -20,19 +26,33 @@ const propTypes = {
   closeModal: PropTypes.func,
 };
 
-const WebViewComponent = ({
-  baseUrl,
-  websiteToken,
-  cwCookie = '',
-  locale = 'en',
-  colorScheme = 'light',
-  user = {},
-  customAttributes = {},
-  conversationCustomAttributes = {},
-  closeModal,
-}) => {
-  const [currentUrl, setCurrentUrl] = React.useState(null);
-  const [loading, setLoading] = useState(true);
+const WebViewComponent = forwardRef(
+  (
+    {
+      baseUrl,
+      websiteToken,
+      cwCookie = '',
+      locale = 'en',
+      colorScheme = 'light',
+      user = {},
+      customAttributes = {},
+      conversationCustomAttributes = {},
+      closeModal,
+    },
+    ref
+  ) => {
+    const webViewRef = useRef(null);
+    const [currentUrl, setCurrentUrl] = React.useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useImperativeHandle(ref, () => ({
+      sendMessage: (message) => {
+        if (webViewRef.current) {
+          const script = generateSendMessageScript(message);
+          webViewRef.current.injectJavaScript(script);
+        }
+      },
+    }));
   let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
 
   if (cwCookie) {
@@ -86,6 +106,7 @@ const WebViewComponent = ({
   return (
     <View style={styles.container}>
       <WebView
+        ref={webViewRef}
         source={{
           uri: widgetUrl,
         }}
@@ -123,7 +144,7 @@ const WebViewComponent = ({
       {loading && renderLoadingComponent()}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

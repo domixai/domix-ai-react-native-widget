@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { SafeAreaView, Appearance } from 'react-native';
 import Modal from 'react-native-modal';
 import PropTypes from 'prop-types';
@@ -25,18 +25,35 @@ const propTypes = {
   closeModal: PropTypes.func,
 };
 
-const DomixAIWidget = ({
-  isModalVisible,
-  baseUrl,
-  websiteToken,
-  user = {},
-  locale = 'en',
-  colorScheme = 'light',
-  customAttributes = {},
-  conversationCustomAttributes = {},
-  closeModal,
-}) => {
-  const [cwCookie, setCookie] = useState('');
+const DomixAIWidget = forwardRef(
+  (
+    {
+      isModalVisible,
+      baseUrl,
+      websiteToken,
+      user = {},
+      locale = 'en',
+      colorScheme = 'light',
+      customAttributes = {},
+      conversationCustomAttributes = {},
+      closeModal,
+    },
+    ref
+  ) => {
+    const webViewRef = useRef(null);
+    const [cwCookie, setCookie] = useState('');
+
+    useImperativeHandle(ref, () => ({
+      sendMessage: message => {
+        if (webViewRef.current) {
+          webViewRef.current.sendMessage(message);
+        }
+      },
+      reset: async () => {
+        await storeHelper.removeCookie();
+        setCookie('');
+      },
+    }));
 
   useEffect(() => {
     async function fetchData() {
@@ -62,6 +79,7 @@ const DomixAIWidget = ({
       <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
       <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
         <WebView
+          ref={webViewRef}
           websiteToken={websiteToken}
           cwCookie={cwCookie}
           user={user}
@@ -75,7 +93,7 @@ const DomixAIWidget = ({
       </SafeAreaView>
     </Modal>
   );
-};
+});
 
 DomixAIWidget.propTypes = propTypes;
 
