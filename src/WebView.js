@@ -1,5 +1,5 @@
 import React, { useState, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
-import { StyleSheet, Linking, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, Linking, View, ActivityIndicator, Text, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import PropTypes from 'prop-types';
 import {
@@ -55,9 +55,9 @@ const WebViewComponent = forwardRef(
           webViewRef.current.injectJavaScript(script);
         }
       },
-      setUser: userData => {
+      setUser: (identifier, userData) => {
         if (webViewRef.current) {
-          const script = generateSetUserScript(userData);
+          const script = generateSetUserScript(identifier, userData);
           webViewRef.current.injectJavaScript(script);
         }
       },
@@ -148,7 +148,7 @@ const WebViewComponent = forwardRef(
   return (
     <View style={styles.container}>
       <WebView
-        ref={webViewRef}
+        ref={Platform.OS === 'web' ? null : webViewRef}
         source={{
           uri: widgetUrl,
         }}

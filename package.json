@@ -1,6 +1,6 @@
 {
   "name": "domix-ai-react-native-widget",
-  "version": "0.0.25",
+  "version": "0.0.27",
   "description": "React Native widget for Domix AI",
   "main": "index.js",
   "scripts": {
@@ -40,7 +40,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/domix-ai/domix-ai-react-native-widget.git"
+    "url": "git+https://github.com/domixai/domix-ai-react-native-widget.git"
   },
   "keywords": [
     "react-native",
@@ -50,9 +50,9 @@
     "android"
   ],
   "bugs": {
-    "url": "https://github.com/domix-ai/domix-ai-react-native-widget/issues"
+    "url": "https://github.com/domixai/domix-ai-react-native-widget/issues"
   },
-  "homepage": "https://github.com/domix-ai/domix-ai-react-native-widget#readme",
+  "homepage": "https://github.com/domixai/domix-ai-react-native-widget#readme",
   "author": "Domix AI",
   "license": "MIT"
 }

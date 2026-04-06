@@ -29,8 +29,8 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = 'RY3LaFtwmkPhDdZVmRd4ektW';
-  const baseUrl = 'https://staging.domix.ai';
+  const websiteToken = '';
+  const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 
   return (
@@ -98,6 +98,19 @@ const App = () => {
             }
           }}>
           <Text style={styles.buttonText}>Reset Session</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
+          onPress={() => {
+            if (widgetRef.current) {
+              widgetRef.current.setUser('test-user-123', {
+                name: 'Test User',
+                email: 'test@example.com',
+                phone_number: '+1234567890',
+              });
+            }
+          }}>
+          <Text style={styles.buttonText}>Support Set User</Text>
         </TouchableOpacity>
       </View>
       <DomixAIWidget

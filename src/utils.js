@@ -36,7 +36,7 @@ export const generateScripts = ({
   if (user) {
     const userObject = {
       event: POST_MESSAGE_EVENTS.SET_USER,
-      identifier: user.identifier,
+      identifier: user.identifier || '',
       user,
     };
     script += createDomixPostMessage(userObject);
@@ -66,11 +66,17 @@ export const generateScripts = ({
   return script;
 };
 
-export const generateSetUserScript = (user) => {
+export const generateSetUserScript = (identifierOrUser, user) => {
+  let identifier = identifierOrUser;
+  let userData = user;
+  if (!userData && typeof identifierOrUser === 'object') {
+    userData = identifierOrUser;
+    identifier = identifierOrUser.identifier;
+  }
   const userObject = {
     event: POST_MESSAGE_EVENTS.SET_USER,
-    identifier: user.identifier,
-    user,
+    identifier: identifier || '',
+    user: userData,
   };
   return createDomixPostMessage(userObject);
 };

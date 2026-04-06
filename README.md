@@ -188,13 +188,30 @@ The whole example is in the `/Example` folder.
 
 ### Methods
 
-You can use a reference to the `DomixAIWidget` component to call methods like `sendMessage` and `reset`.
+You can use a reference to the `DomixAIWidget` component to call methods like `sendMessage`, `setUser`, and `reset`.
 
 ```javascript
 const widgetRef = useRef(null);
 
 // To send a message
 widgetRef.current.sendMessage('Hello from React Native!');
+
+// To set user information
+widgetRef.current.setUser('user-identifier-key', {
+  email: 'john@gmail.com',
+  name: 'John Samuel',
+  avatar_url: '',
+  phone_number: '+1234567890',
+});
+
+// To set custom attributes
+widgetRef.current.setCustomAttributes({ accountId: 1, status: 'active' });
+
+// To set conversation custom attributes
+widgetRef.current.setConversationCustomAttributes({ orderId: 1234 });
+
+// To close the widget modal
+widgetRef.current.closeModal();
 
 // To reset the session
 widgetRef.current.reset();
@@ -215,6 +232,26 @@ widgetRef.current.reset();
     <td>sendMessage</td>
     <td>message (String)</td>
     <td>Sends a message on behalf of the user.</td>
+  </tr>
+  <tr>
+    <td>setUser</td>
+    <td>user (Object)</td>
+    <td>Updates user information for the widget.</td>
+  </tr>
+  <tr>
+    <td>setCustomAttributes</td>
+    <td>attributes (Object)</td>
+    <td>Updates custom attributes for the user.</td>
+  </tr>
+  <tr>
+    <td>setConversationCustomAttributes</td>
+    <td>attributes (Object)</td>
+    <td>Updates custom attributes for the current conversation.</td>
+  </tr>
+  <tr>
+    <td>closeModal</td>
+    <td>-</td>
+    <td>Closes the widget modal.</td>
   </tr>
   <tr>
     <td>reset</td>
