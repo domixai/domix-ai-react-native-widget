@@ -8,6 +8,9 @@ import {
   generateScripts,
   getMessage,
   generateSendMessageScript,
+  generateSetUserScript,
+  generateSetCustomAttributesScript,
+  generateSetConversationCustomAttributesScript,
 } from './utils';
 const propTypes = {
   websiteToken: PropTypes.string.isRequired,
@@ -46,13 +49,52 @@ const WebViewComponent = forwardRef(
     const [loading, setLoading] = useState(true);
 
     useImperativeHandle(ref, () => ({
-      sendMessage: (message) => {
+      sendMessage: message => {
         if (webViewRef.current) {
           const script = generateSendMessageScript(message);
           webViewRef.current.injectJavaScript(script);
         }
       },
+      setUser: userData => {
+        if (webViewRef.current) {
+          const script = generateSetUserScript(userData);
+          webViewRef.current.injectJavaScript(script);
+        }
+      },
+      setCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          const script = generateSetCustomAttributesScript(attributes);
+          webViewRef.current.injectJavaScript(script);
+        }
+      },
+      setConversationCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          const script = generateSetConversationCustomAttributesScript(attributes);
+          webViewRef.current.injectJavaScript(script);
+        }
+      },
     }));
+
+    React.useEffect(() => {
+      if (webViewRef.current && !loading) {
+        const script = generateSetUserScript(user);
+        webViewRef.current.injectJavaScript(script);
+      }
+    }, [user, loading]);
+
+    React.useEffect(() => {
+      if (webViewRef.current && !loading) {
+        const script = generateSetCustomAttributesScript(customAttributes);
+        webViewRef.current.injectJavaScript(script);
+      }
+    }, [customAttributes, loading]);
+
+    React.useEffect(() => {
+      if (webViewRef.current && !loading) {
+        const script = generateSetConversationCustomAttributesScript(conversationCustomAttributes);
+        webViewRef.current.injectJavaScript(script);
+      }
+    }, [conversationCustomAttributes, loading]);
   let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
 
   if (cwCookie) {

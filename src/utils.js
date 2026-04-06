@@ -66,6 +66,41 @@ export const generateScripts = ({
   return script;
 };
 
+export const generateSetUserScript = (user) => {
+  const userObject = {
+    event: POST_MESSAGE_EVENTS.SET_USER,
+    identifier: user.identifier,
+    user,
+  };
+  return createDomixPostMessage(userObject);
+};
+
+export const generateSetCustomAttributesScript = (customAttributes) => {
+  const attributeObject = {
+    event: POST_MESSAGE_EVENTS.SET_CUSTOM_ATTRIBUTES,
+    customAttributes,
+  };
+  return createDomixPostMessage(attributeObject);
+};
+
+export const generateSetConversationCustomAttributesScript = (conversationCustomAttributes) => {
+  const conversationAttributeObject = {
+    event: POST_MESSAGE_EVENTS.SET_CONVERSATION_CUSTOM_ATTRIBUTES,
+    customAttributes: conversationCustomAttributes,
+  };
+  return createDomixPostMessage(conversationAttributeObject);
+};
+
+export const generateSetLocaleScript = (locale) => {
+  const localeObject = { event: POST_MESSAGE_EVENTS.SET_LOCALE, locale };
+  return createDomixPostMessage(localeObject);
+};
+
+export const generateSetColorSchemeScript = (colorScheme) => {
+  const themeObject = { event: POST_MESSAGE_EVENTS.SET_COLOR_SCHEME, darkMode: colorScheme };
+  return createDomixPostMessage(themeObject);
+};
+
 export const generateSendMessageScript = (content) => {
   const sendMessageObject = {
     event: POST_MESSAGE_EVENTS.SEND_MESSAGE,

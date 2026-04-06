@@ -49,6 +49,21 @@ const DomixAIWidget = forwardRef(
           webViewRef.current.sendMessage(message);
         }
       },
+      setUser: userData => {
+        if (webViewRef.current) {
+          webViewRef.current.setUser(userData);
+        }
+      },
+      setCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          webViewRef.current.setCustomAttributes(attributes);
+        }
+      },
+      setConversationCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          webViewRef.current.setConversationCustomAttributes(attributes);
+        }
+      },
       reset: async () => {
         await storeHelper.removeCookie();
         setCookie('');
