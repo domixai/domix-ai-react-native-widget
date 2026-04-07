@@ -15,11 +15,11 @@ const App = () => {
   const [showWidget, toggleWidget] = useState(false);
   const [user, setUser] = useState({
     identifier: 8596,
-    name: "Shymaa Mohmed",
-    email: "shymaa.mohmed91@gmail.com",
-    phone_number: "+201069541592",
-    identifier_hash: "a00e308dc2110027877a325008978c9dc79ff4d0d46e64148e249623e2defe04",
-    description: "customer"
+    name: "test",
+    email: "test@gmail.com",
+    phone_number: "+201000000000",
+    identifier_hash: "",
+    description: ""
   });
   
   const customAttributes = {
@@ -31,7 +31,7 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = 'zwreKiAbwntXTtKx1367HwzW';
+  const websiteToken = '';
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 

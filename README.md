@@ -54,7 +54,9 @@ const App = () => {
     name: 'John Samuel',
     avatar_url: '',
     email: 'john@gmail.com',
-    identifier_hash: '',
+    identifier_hash: '', // optional: see Identity Validation section
+    phone_number: '', // optional
+    description: 'customer', // optional
   };
   const customAttributes = { accountId: 1, pricingPlan: 'paid', status: 'active' };
   const conversationCustomAttributes = { orderId: 1234, status: 'pending' };
@@ -70,19 +72,17 @@ const App = () => {
           <Text style={styles.buttonText}>Open widget</Text>
         </TouchableOpacity>
       </View>
-      {showWidget && (
-        <DomixAIWidget
-          websiteToken={websiteToken}
-          locale={locale}
-          baseUrl={baseUrl}
-          closeModal={() => toggleWidget(false)}
-          isModalVisible={showWidget}
-          user={user}
-          customAttributes={customAttributes}
-          conversationCustomAttributes={conversationCustomAttributes}
-          colorScheme={colorScheme}
-        />
-      )}
+      <DomixAIWidget
+        websiteToken={websiteToken}
+        locale={locale}
+        baseUrl={baseUrl}
+        closeModal={() => toggleWidget(false)}
+        isModalVisible={showWidget}
+        user={user}
+        customAttributes={customAttributes}
+        conversationCustomAttributes={conversationCustomAttributes}
+        colorScheme={colorScheme}
+      />
     </SafeAreaView>
   );
 };
@@ -169,7 +169,7 @@ The whole example is in the `/Example` folder.
 	  <td>user</td>
     <td> {} </td>
     <td> Object </td>
-    <td>User information about the user like email, username and avatar_url</td>
+    <td>User information about the user like email, name, identifier and identifier_hash</td>
   </tr>
   <tr>
    <td>customAttributes</td>
@@ -186,6 +186,21 @@ The whole example is in the `/Example` folder.
  </tbody>
 </table>
 
+### Identity Validation (HMAC)
+
+To securely identify a user and persist their conversation history, you can provide an `identifier_hash`. This hash is generated using an HMAC-SHA256 signature of the user's `identifier` and the `webwidget_hmac_token` (found in Inbox Settings -> Identity Validation).
+
+Here is an example of how to generate the hash in PHP:
+
+```php
+$key = '<webwidget-hmac-token>';
+$identifier = '<identifier>';
+
+$identifier_hash = hash_hmac('sha256', $identifier, $key);
+```
+
+Pass this `identifier_hash` in the `user` object to authorize the session and load the user's conversation history.
+
 ### Methods
 
 You can use a reference to the `DomixAIWidget` component to call methods like `sendMessage`, `setUser`, and `reset`.
@@ -196,12 +211,14 @@ const widgetRef = useRef(null);
 // To send a message
 widgetRef.current.sendMessage('Hello from React Native!');
 
-// To set user information
+// To set user information (includes persistence support)
 widgetRef.current.setUser('user-identifier-key', {
   email: 'john@gmail.com',
   name: 'John Samuel',
   avatar_url: '',
-  phone_number: '+1234567890',
+  phone_number: '',
+  description: 'customer',
+  identifier_hash: '...', // secure hash
 });
 
 // To set custom attributes
@@ -213,14 +230,11 @@ widgetRef.current.setConversationCustomAttributes({ orderId: 1234 });
 // To close the widget modal
 widgetRef.current.closeModal();
 
-// To reset the session
+// To reset the session and clear cookies
 widgetRef.current.reset();
 
 // Usage in component
-<DomixAIWidget
-  ref={widgetRef}
-  {...props}
-/>
+<DomixAIWidget ref={widgetRef} {...props} />;
 ```
 
 <table class="table">
@@ -235,8 +249,8 @@ widgetRef.current.reset();
   </tr>
   <tr>
     <td>setUser</td>
-    <td>user (Object)</td>
-    <td>Updates user information for the widget.</td>
+    <td>identifier (String), userObject (Object)</td>
+    <td>Updates user information and retrieves session history if identifier_hash is valid.</td>
   </tr>
   <tr>
     <td>setCustomAttributes</td>
