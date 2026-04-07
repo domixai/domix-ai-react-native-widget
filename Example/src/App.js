@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Appearance } from 'react-native';
+import React, { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { SafeAreaView, Appearance, View } from 'react-native';
 import Modal from 'react-native-modal';
 import PropTypes from 'prop-types';
 import { storeHelper, findColors } from './utils';
@@ -21,20 +21,55 @@ const propTypes = {
   locale: PropTypes.string,
   colorScheme: PropTypes.oneOf(['dark', 'light', 'auto']),
   customAttributes: PropTypes.shape({}),
+  conversationCustomAttributes: PropTypes.shape({}),
   closeModal: PropTypes.func,
 };
 
-const DomixAIWidget = ({
-  isModalVisible,
-  baseUrl,
-  websiteToken,
-  user = {},
-  locale = 'en',
-  colorScheme = 'light',
-  customAttributes = {},
-  closeModal,
-}) => {
-  const [cwCookie, setCookie] = useState('');
+const DomixAIWidget = forwardRef(
+  (
+    {
+      isModalVisible,
+      baseUrl,
+      websiteToken,
+      user = {},
+      locale = 'en',
+      colorScheme = 'light',
+      customAttributes = {},
+      conversationCustomAttributes = {},
+      closeModal,
+    },
+    ref
+  ) => {
+    const webViewRef = useRef(null);
+    const [cwCookie, setCookie] = useState('');
+
+    useImperativeHandle(ref, () => ({
+      sendMessage: message => {
+        if (webViewRef.current) {
+          webViewRef.current.sendMessage(message);
+        }
+      },
+      setUser: (identifier, userData) => {
+        if (webViewRef.current) {
+          webViewRef.current.setUser(identifier, userData);
+        }
+      },
+      setCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          webViewRef.current.setCustomAttributes(attributes);
+        }
+      },
+      setConversationCustomAttributes: attributes => {
+        if (webViewRef.current) {
+          webViewRef.current.setConversationCustomAttributes(attributes);
+        }
+      },
+      reset: async () => {
+        await storeHelper.removeCookie();
+        setCookie('');
+      },
+      closeModal: () => closeModal(),
+    }));
 
   useEffect(() => {
     async function fetchData() {
@@ -57,22 +92,26 @@ const DomixAIWidget = ({
       onBackButtonPress={closeModal}
       onBackdropPress={closeModal}
       style={styles.modal}>
-      <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
-      <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
-        <WebView
-          websiteToken={websiteToken}
-          cwCookie={cwCookie}
-          user={user}
-          baseUrl={baseUrl}
-          locale={locale}
-          colorScheme={colorScheme}
-          customAttributes={customAttributes}
-          closeModal={closeModal}
-        />
-      </SafeAreaView>
+      <View style={styles.mainView}>
+        <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
+        <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
+          <WebView
+            ref={webViewRef}
+            websiteToken={websiteToken}
+            cwCookie={cwCookie}
+            user={user}
+            baseUrl={baseUrl}
+            locale={locale}
+            colorScheme={colorScheme}
+            customAttributes={customAttributes}
+            conversationCustomAttributes={conversationCustomAttributes}
+            closeModal={closeModal}
+          />
+        </SafeAreaView>
+      </View>
     </Modal>
   );
-};
+});
 
 DomixAIWidget.propTypes = propTypes;
 

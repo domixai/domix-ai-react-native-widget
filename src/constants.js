@@ -6,6 +6,7 @@ export const POST_MESSAGE_EVENTS = {
   SET_COLOR_SCHEME: 'set-color-scheme',
   SET_CONVERSATION_CUSTOM_ATTRIBUTES: 'set-conversation-custom-attributes',
   SEND_MESSAGE: 'send-message',
+  SET_AUTH_COOKIE: 'setAuthCookie',
   RESET: 'reset',
 };
 export const COLOR_WHITE = '#fff';

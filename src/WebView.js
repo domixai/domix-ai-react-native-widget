@@ -97,6 +97,12 @@ const WebViewComponent = forwardRef(
     }, [conversationCustomAttributes, loading]);
   let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
 
+  if (user && user.identifier) {
+    widgetUrl = `${widgetUrl}&identifier=${user.identifier}`;
+  }
+  if (user && user.identifier_hash) {
+    widgetUrl = `${widgetUrl}&identifier_hash=${user.identifier_hash}`;
+  }
   if (cwCookie) {
     widgetUrl = `${widgetUrl}&cw_conversation=${cwCookie}`;
   }
@@ -157,14 +163,19 @@ const WebViewComponent = forwardRef(
           const message = getMessage(data);
           if (isJsonString(message)) {
             const parsedMessage = JSON.parse(message);
-            const { event: eventType, type } = parsedMessage;
-            if (eventType === 'loaded') {
+            const { event: eventType, type, data } = parsedMessage;
+            const eventName = eventType || type;
+            if (eventName === 'loaded') {
               const {
                 config: { authToken },
               } = parsedMessage;
               storeHelper.storeCookie(authToken);
             }
-            if (type === 'close-widget') {
+            if (eventName === 'setAuthCookie') {
+              const { widgetAuthToken } = data;
+              storeHelper.storeCookie(widgetAuthToken);
+            }
+            if (eventName === 'close-widget') {
               closeModal();
             }
           }

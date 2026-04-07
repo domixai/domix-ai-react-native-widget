@@ -14,12 +14,14 @@ const App = () => {
   const widgetRef = useRef(null);
   const [showWidget, toggleWidget] = useState(false);
   const [user, setUser] = useState({
-    identifier: 'sandra.lawrence@example.com',
-    name: 'Sandra Lawrence',
-    avatar_url: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    email: 'sandra.lawrence@example.com',
-    identifier_hash: '',
+    identifier: 8596,
+    name: "Shymaa Mohmed",
+    email: "shymaa.mohmed91@gmail.com",
+    phone_number: "+201069541592",
+    identifier_hash: "a00e308dc2110027877a325008978c9dc79ff4d0d46e64148e249623e2defe04",
+    description: "customer"
   });
+  
   const customAttributes = {
     accountId: 1,
     pricingPlan: 'paid',
@@ -29,7 +31,7 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = '';
+  const websiteToken = 'zwreKiAbwntXTtKx1367HwzW';
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 
@@ -75,6 +77,18 @@ const App = () => {
             }))
           }
           value={user.avatar_url}
+        />
+        <Text style={styles.label}>Identifier Hash (HMAC)</Text>
+        <TextInput
+          style={styles.input}
+          onChangeText={text =>
+            setUser(prevUser => ({
+              ...prevUser,
+              identifier_hash: text,
+            }))
+          }
+          value={user.identifier_hash}
+          placeholder="Paste HMAC sha256 hash here"
         />
         <TouchableOpacity
           style={styles.button}
