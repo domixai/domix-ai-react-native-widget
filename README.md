@@ -42,8 +42,7 @@ cd ios && pod install
 
 ```javascript
 import React, { useState } from 'react';
-
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, Text } from 'react-native';
+import { Alert, StyleSheet, View, SafeAreaView, TouchableOpacity, Text } from 'react-native';
 
 import DomixAIWidget from 'domix-ai-react-native-widget';
 
@@ -64,6 +63,12 @@ const App = () => {
   const baseUrl = 'https://chat.domix.ai';
   const locale = 'en';
   const colorScheme = 'dark';
+  const handleWidgetEvent = ({ eventName, data, payload }) => {
+    // Example: react to quick-reply postback or any custom widget event
+    if (eventName === 'domix:postback') {
+      Alert.alert('Postback', JSON.stringify(data || payload));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,12 +81,15 @@ const App = () => {
         websiteToken={websiteToken}
         locale={locale}
         baseUrl={baseUrl}
+        autoStartConversation
+        openModal={() => toggleWidget(true)}
         closeModal={() => toggleWidget(false)}
         isModalVisible={showWidget}
         user={user}
         customAttributes={customAttributes}
         conversationCustomAttributes={conversationCustomAttributes}
         colorScheme={colorScheme}
+        onEvent={handleWidgetEvent}
       />
     </SafeAreaView>
   );
@@ -159,12 +167,24 @@ The whole example is in the `/Example` folder.
     <td> Boolean </td>
     <td>Widget is visible or not</td>
   </tr>
-    <tr>
-    <td>closeModal</td>
-    <td> - </td>
-    <td> Function </td>
-    <td>Close event</td>
-  </tr>
+	  <tr>
+	    <td>closeModal</td>
+	    <td> - </td>
+	    <td> Function </td>
+	    <td>Close event</td>
+	  </tr>
+	  <tr>
+	    <td>openModal</td>
+	    <td> - </td>
+	    <td> Function </td>
+	    <td>Optional open handler. If provided, `sendMessage` can request opening the widget automatically.</td>
+	  </tr>
+	  <tr>
+	    <td>autoStartConversation</td>
+	    <td>false</td>
+	    <td>Boolean</td>
+	    <td>Automatically triggers Start Conversation screen action when widget opens.</td>
+	  </tr>
   <tr>
 	  <td>user</td>
     <td> {} </td>
@@ -177,13 +197,19 @@ The whole example is in the `/Example` folder.
     <td> Object </td>
     <td>Additional information about the customer (Contact)</td>
   </tr>
-  <tr>
-   <td>conversationCustomAttributes</td>
-    <td> {} </td>
-    <td> Object </td>
-    <td>Additional information about the conversation</td>
-  </tr>
- </tbody>
+	  <tr>
+	   <td>conversationCustomAttributes</td>
+	    <td> {} </td>
+	    <td> Object </td>
+	    <td>Additional information about the conversation</td>
+	  </tr>
+	  <tr>
+	   <td>onEvent</td>
+	    <td> - </td>
+	    <td> Function </td>
+	    <td>Receives all widget events (including postback/custom events) with parsed payload.</td>
+	  </tr>
+	 </tbody>
 </table>
 
 ### Identity Validation (HMAC)
@@ -199,7 +225,7 @@ $identifier = '<identifier>';
 $identifier_hash = hash_hmac('sha256', $identifier, $key);
 ```
 
-Pass this `identifier_hash` in the `user` object to authorize the session and load the user's conversation history.
+Pass this `identifier_hash` in the `user` object to authorize the session and load the user's conversation history. If identity changes, the widget will automatically rest and clean the session securely to prevent data leaks.
 
 ### Methods
 
@@ -208,8 +234,16 @@ You can use a reference to the `DomixAIWidget` component to call methods like `s
 ```javascript
 const widgetRef = useRef(null);
 
-// To send a message
+// To send a message (Messages are automatically queued securely until the widget and conversation history are fully loaded and authenticated)
 widgetRef.current.sendMessage('Hello from React Native!');
+
+// Receive events/data from widget and continue your flow
+const handleWidgetEvent = ({ eventName, data, payload }) => {
+  if (eventName === 'domix:postback') {
+    // use returned data here
+    console.log('POSTBACK DATA:', data || payload);
+  }
+};
 
 // To set user information (includes persistence support)
 widgetRef.current.setUser('user-identifier-key', {
@@ -234,7 +268,7 @@ widgetRef.current.closeModal();
 widgetRef.current.reset();
 
 // Usage in component
-<DomixAIWidget ref={widgetRef} {...props} />;
+<DomixAIWidget ref={widgetRef} onEvent={handleWidgetEvent} {...props} />;
 ```
 
 <table class="table">
@@ -245,7 +279,7 @@ widgetRef.current.reset();
   <tr>
     <td>sendMessage</td>
     <td>message (String)</td>
-    <td>Sends a message on behalf of the user.</td>
+    <td>Sends a message on behalf of the user. Internally queues the message recursively until backend sync completes.</td>
   </tr>
   <tr>
     <td>setUser</td>

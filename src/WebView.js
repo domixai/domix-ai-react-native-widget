@@ -11,6 +11,8 @@ import {
   generateSetUserScript,
   generateSetCustomAttributesScript,
   generateSetConversationCustomAttributesScript,
+  generateToggleOpenScript,
+  generateResetScript,
 } from './utils';
 const propTypes = {
   websiteToken: PropTypes.string.isRequired,
@@ -39,72 +41,176 @@ const WebViewComponent = forwardRef(
       colorScheme = 'light',
       user = {},
       customAttributes = {},
-      conversationCustomAttributes = {},
-      closeModal,
+    conversationCustomAttributes = {},
+    closeModal,
+    isModalVisible,
+  },
+  ref
+) => {
+  const nativeWebViewRef = useRef(null);
+  const prevIdentifierRef = useRef(user?.identifier);
+  const pendingMessagesRef = useRef([]);
+  const isWidgetReadyRef = useRef(false);
+  const isHistoryProcessedRef = useRef(false);
+  const isPollingRef = useRef(false);
+  const [currentUrl, setCurrentUrl] = React.useState(null);
+  const [isWidgetReady, setIsWidgetReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const syncAttemptsRef = useRef(0);
+
+  // Sync refs with state
+  React.useEffect(() => {
+    isWidgetReadyRef.current = isWidgetReady;
+  }, [isWidgetReady]);
+
+  const recursiveFlushMessages = (attempts = 0) => {
+    // Stop if no messages or limit reached (15 seconds: 30 * 500ms)
+    if (pendingMessagesRef.current.length === 0 || attempts > 30) {
+      isPollingRef.current = false;
+      return;
+    }
+
+    isPollingRef.current = true;
+
+    if (nativeWebViewRef.current && isWidgetReadyRef.current && isHistoryProcessedRef.current) {
+      console.log(`DOMIX_RECURSION: Ready after ${attempts} attempts. Flushing ${pendingMessagesRef.current.length} messages.`);
+      pendingMessagesRef.current.forEach(message => {
+        const script = generateSendMessageScript(message);
+        nativeWebViewRef.current.injectJavaScript(script);
+      });
+      pendingMessagesRef.current = [];
+      isPollingRef.current = false;
+    } else {
+      setTimeout(() => recursiveFlushMessages(attempts + 1), 500);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    sendMessage: (message) => {
+      console.log('DOMIX_BRIDGE: sendMessage requested for:', message);
+      pendingMessagesRef.current.push(message);
+      if (!isPollingRef.current) {
+        recursiveFlushMessages();
+      }
     },
-    ref
-  ) => {
-    const webViewRef = useRef(null);
-    const [currentUrl, setCurrentUrl] = React.useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useImperativeHandle(ref, () => ({
-      sendMessage: message => {
-        if (webViewRef.current) {
-          const script = generateSendMessageScript(message);
-          webViewRef.current.injectJavaScript(script);
-        }
-      },
-      setUser: (identifier, userData) => {
-        if (webViewRef.current) {
-          const script = generateSetUserScript(identifier, userData);
-          webViewRef.current.injectJavaScript(script);
-        }
-      },
-      setCustomAttributes: attributes => {
-        if (webViewRef.current) {
-          const script = generateSetCustomAttributesScript(attributes);
-          webViewRef.current.injectJavaScript(script);
-        }
-      },
-      setConversationCustomAttributes: attributes => {
-        if (webViewRef.current) {
-          const script = generateSetConversationCustomAttributesScript(attributes);
-          webViewRef.current.injectJavaScript(script);
-        }
-      },
-    }));
-
-    React.useEffect(() => {
-      if (webViewRef.current && !loading) {
-        const script = generateSetUserScript(user);
-        webViewRef.current.injectJavaScript(script);
+    setUser: (identifier, userData) => {
+      if (nativeWebViewRef.current) {
+        const script = generateSetUserScript(identifier, userData);
+        nativeWebViewRef.current.injectJavaScript(script);
       }
-    }, [user, loading]);
+    },
+    setCustomAttributes: (attributes) => {
+      if (nativeWebViewRef.current) {
+        const script = generateSetCustomAttributesScript(attributes);
+        nativeWebViewRef.current.injectJavaScript(script);
+      }
+    },
+    setConversationCustomAttributes: (attributes) => {
+      if (nativeWebViewRef.current) {
+        const script = generateSetConversationCustomAttributesScript(attributes);
+        nativeWebViewRef.current.injectJavaScript(script);
+      }
+    },
+    reset: () => {
+      if (nativeWebViewRef.current) {
+        // Clear pending messages on manual reset
+        pendingMessagesRef.current = [];
+        const script = generateResetScript();
+        nativeWebViewRef.current.injectJavaScript(script);
+        setIsWidgetReady(false);
+        syncAttemptsRef.current = 0;
+      }
+    },
+  }));
+
+  // Retry mechanism: Attempt to sync user data every 2s for 10 times max
+  // until the widget signals it is ready (isWidgetReady)
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (nativeWebViewRef.current && !isWidgetReady && syncAttemptsRef.current < 10) {
+        console.log('DOMIX_SYNC: Sync attempt', syncAttemptsRef.current);
+        const userScript = generateSetUserScript(user);
+        nativeWebViewRef.current.injectJavaScript(userScript);
+
+        if (customAttributes && Object.keys(customAttributes).length > 0) {
+          const customScript = generateSetCustomAttributesScript(customAttributes);
+          nativeWebViewRef.current.injectJavaScript(customScript);
+        }
+        syncAttemptsRef.current += 1;
+      } else {
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [user, isWidgetReady, customAttributes]);
+
+  // Handle user switching by resetting session if identifier changes
+  React.useEffect(() => {
+    if (user?.identifier !== prevIdentifierRef.current && isWidgetReady && nativeWebViewRef.current) {
+      console.log('DOMIX_RESET: Identity changed, resetting session to load correct history');
+      
+      // Clear pending messages on identity switch
+      pendingMessagesRef.current = [];
+      isHistoryProcessedRef.current = false;
+      
+      const resetScript = generateResetScript();
+      nativeWebViewRef.current.injectJavaScript(resetScript);
+      
+      // Re-send user data after a short delay to allow reset to settle
+      setTimeout(() => {
+        const userScript = generateSetUserScript(user);
+        nativeWebViewRef.current.injectJavaScript(userScript);
+      }, 500);
+      
+      prevIdentifierRef.current = user?.identifier;
+    }
+  }, [user?.identifier, isWidgetReady]);
+
+  React.useEffect(() => {
+    if (nativeWebViewRef.current && isWidgetReady) {
+      console.log('DOMIX_SYNC: Component ready, setting user');
+      const script = generateSetUserScript(user);
+      nativeWebViewRef.current.injectJavaScript(script);
+      
+      // Fallback: If no history event received in 6s, allow messaging to proceed
+      setTimeout(() => {
+        isHistoryProcessedRef.current = true;
+      }, 6000);
+    }
+  }, [isWidgetReady]);
+
+  // Re-sync on every open to ensure history/data is fresh
+  React.useEffect(() => {
+    if (isModalVisible && nativeWebViewRef.current && isWidgetReady) {
+      console.log('DOMIX_MODAL: Re-syncing on open');
+      const script = generateSetUserScript(user);
+      nativeWebViewRef.current.injectJavaScript(script);
+      
+      const openScript = generateToggleOpenScript(true);
+      setTimeout(() => {
+        nativeWebViewRef.current.injectJavaScript(openScript);
+      }, 300);
+    }
+  }, [isModalVisible, isWidgetReady]);
 
     React.useEffect(() => {
-      if (webViewRef.current && !loading) {
+      if (nativeWebViewRef.current && isWidgetReady) {
         const script = generateSetCustomAttributesScript(customAttributes);
-        webViewRef.current.injectJavaScript(script);
+        nativeWebViewRef.current.injectJavaScript(script);
       }
-    }, [customAttributes, loading]);
+    }, [customAttributes, isWidgetReady]);
 
     React.useEffect(() => {
-      if (webViewRef.current && !loading) {
+      if (nativeWebViewRef.current && isWidgetReady) {
         const script = generateSetConversationCustomAttributesScript(conversationCustomAttributes);
-        webViewRef.current.injectJavaScript(script);
+        nativeWebViewRef.current.injectJavaScript(script);
       }
-    }, [conversationCustomAttributes, loading]);
-  let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
+    }, [conversationCustomAttributes, isWidgetReady]);
+  let widgetUrl = `${baseUrl}/widget?website_token=${encodeURIComponent(websiteToken)}&locale=${encodeURIComponent(locale)}`;
 
-  if (user && user.identifier) {
-    widgetUrl = `${widgetUrl}&identifier=${user.identifier}`;
-  }
-  if (user && user.identifier_hash) {
-    widgetUrl = `${widgetUrl}&identifier_hash=${user.identifier_hash}`;
-  }
   if (cwCookie) {
-    widgetUrl = `${widgetUrl}&cw_conversation=${cwCookie}`;
+    widgetUrl = `${widgetUrl}&cw_conversation=${encodeURIComponent(cwCookie)}`;
   }
   const injectedJavaScript = generateScripts({
     user,
@@ -132,7 +238,8 @@ const WebViewComponent = forwardRef(
   };
 
   const opacity = useMemo(() => {
-    if (loading) {
+    // Only show if widget is ready
+    if (loading || !isWidgetReady) {
       return {
         opacity: 0,
       };
@@ -140,7 +247,7 @@ const WebViewComponent = forwardRef(
     return {
       opacity: 1,
     };
-  }, [loading]);
+  }, [loading, isWidgetReady]);
 
   const renderLoadingComponent = () => {
     return (
@@ -154,26 +261,38 @@ const WebViewComponent = forwardRef(
   return (
     <View style={styles.container}>
       <WebView
-        ref={Platform.OS === 'web' ? null : webViewRef}
+        ref={Platform.OS === 'web' ? null : nativeWebViewRef}
         source={{
           uri: widgetUrl,
         }}
         onMessage={(event) => {
           const { data } = event.nativeEvent;
+          console.log('DOMIX_WIDGET_MESSAGE:', data);
           const message = getMessage(data);
           if (isJsonString(message)) {
             const parsedMessage = JSON.parse(message);
-            const { event: eventType, type, data } = parsedMessage;
+            const { event: eventType, type, data: eventData } = parsedMessage;
             const eventName = eventType || type;
+            console.log('DOMIX_EVENT_PARSED:', eventName);
             if (eventName === 'loaded') {
+              console.log('DOMIX_STATUS: Widget Loaded successfully');
               const {
                 config: { authToken },
               } = parsedMessage;
               storeHelper.storeCookie(authToken);
+              setIsWidgetReady(true);
+              recursiveFlushMessages();
             }
             if (eventName === 'setAuthCookie') {
-              const { widgetAuthToken } = data;
-              storeHelper.storeCookie(widgetAuthToken);
+              const { widgetAuthToken } = eventData || {};
+              if (widgetAuthToken) {
+                console.log('DOMIX_STATUS: Received Auth Cookie');
+                storeHelper.storeCookie(widgetAuthToken);
+              }
+            }
+            if (eventName === 'setUnreadMode') {
+              console.log('DOMIX_STATUS: History Processed (setUnreadMode received)');
+              isHistoryProcessedRef.current = true;
             }
             if (eventName === 'close-widget') {
               closeModal();
@@ -189,12 +308,15 @@ const WebViewComponent = forwardRef(
         injectedJavaScript={injectedJavaScript}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         onNavigationStateChange={handleWebViewNavigationStateChange}
-        onLoadStart={() => setLoading(true)}
+        onLoadStart={() => {
+          setLoading(true);
+          setIsWidgetReady(false);
+        }}
         onLoadProgress={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         scrollEnabled
       />
-      {loading && renderLoadingComponent()}
+      {(loading || !isWidgetReady) && renderLoadingComponent()}
     </View>
   );
 });

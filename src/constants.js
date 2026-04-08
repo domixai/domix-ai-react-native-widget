@@ -1,4 +1,5 @@
 export const DOMIX_PREFIX = 'domix-widget:';
+export const WIDGET_MESSAGE_PREFIXES = [DOMIX_PREFIX];
 export const POST_MESSAGE_EVENTS = {
   SET_LOCALE: 'set-locale',
   SET_CUSTOM_ATTRIBUTES: 'set-custom-attributes',
@@ -7,6 +8,7 @@ export const POST_MESSAGE_EVENTS = {
   SET_CONVERSATION_CUSTOM_ATTRIBUTES: 'set-conversation-custom-attributes',
   SEND_MESSAGE: 'send-message',
   SET_AUTH_COOKIE: 'setAuthCookie',
+  TOGGLE_OPEN: 'toggle-open',
   RESET: 'reset',
 };
 export const COLOR_WHITE = '#fff';
