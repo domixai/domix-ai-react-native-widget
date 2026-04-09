@@ -1,27 +1,21 @@
-import React, {useState, useRef} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import DomixAIWidget from 'domix-ai-react-native-widget';
 
-import {
-  SafeAreaView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-} from 'react-native';
+import { SafeAreaView, Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
 
 const App = () => {
   const widgetRef = useRef(null);
   const [showWidget, toggleWidget] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState('');
   const [user, setUser] = useState({
     identifier: 8596,
-    name: "Shymaa Mohmed",
-    email: "shymaa.mohmed91@gmail.com",
-    phone_number: "+201069541592",
-    identifier_hash: "a00e308dc2110027877a325008978c9dc79ff4d0d46e64148e249623e2defe04",
-    description: "customer"
+    name: 'test 1',
+    email: 'test1@domix.ai',
+    phone_number: '',
+    identifier_hash: '',
+    description: 'customer',
   });
-  
+
   const customAttributes = {
     accountId: 1,
     pricingPlan: 'paid',
@@ -31,9 +25,18 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = 'zwreKiAbwntXTtKx1367HwzW';
+  const websiteToken = '';
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
+
+  useEffect(() => {
+    if (!showWidget || !pendingMessage || !widgetRef.current) {
+      return;
+    }
+
+    widgetRef.current.sendMessage(pendingMessage);
+    setPendingMessage('');
+  }, [showWidget, pendingMessage]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,8 +44,8 @@ const App = () => {
         <Text style={styles.label}>Name</Text>
         <TextInput
           style={styles.input}
-          onChangeText={text =>
-            setUser(prevUser => ({
+          onChangeText={(text) =>
+            setUser((prevUser) => ({
               ...prevUser,
               name: text,
             }))
@@ -52,8 +55,8 @@ const App = () => {
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
-          onChangeText={text =>
-            setUser(prevUser => ({
+          onChangeText={(text) =>
+            setUser((prevUser) => ({
               ...prevUser,
               email: text,
               identifier: text,
@@ -62,16 +65,12 @@ const App = () => {
           value={user.email}
         />
         <Text style={styles.label}>Language</Text>
-        <TextInput
-          style={styles.input}
-          value={locale}
-          onChangeText={() => setLocale(locale)}
-        />
+        <TextInput style={styles.input} value={locale} onChangeText={() => setLocale(locale)} />
         <Text style={styles.label}>Avatar</Text>
         <TextInput
           style={styles.input}
-          onChangeText={text =>
-            setUser(prevUser => ({
+          onChangeText={(text) =>
+            setUser((prevUser) => ({
               ...prevUser,
               avatar_url: text,
             }))
@@ -81,8 +80,8 @@ const App = () => {
         <Text style={styles.label}>Identifier Hash (HMAC)</Text>
         <TextInput
           style={styles.input}
-          onChangeText={text =>
-            setUser(prevUser => ({
+          onChangeText={(text) =>
+            setUser((prevUser) => ({
               ...prevUser,
               identifier_hash: text,
             }))
@@ -90,17 +89,19 @@ const App = () => {
           value={user.identifier_hash}
           placeholder="Paste HMAC sha256 hash here"
         />
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => toggleWidget(true)}>
+        <TouchableOpacity style={styles.button} onPress={() => toggleWidget(true)}>
           <Text style={styles.buttonText}>Open Domix AI Widget</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { marginTop: 10, backgroundColor: '#4CAF50' }]}
           onPress={() => {
-            if (widgetRef.current) {
+            if (showWidget && widgetRef.current) {
               widgetRef.current.sendMessage('Hello! This is a test message.');
+              return;
             }
+
+            setPendingMessage('Hello! This is a test message.');
+            toggleWidget(true);
           }}>
           <Text style={styles.buttonText}>Send Test Message</Text>
         </TouchableOpacity>
@@ -110,18 +111,26 @@ const App = () => {
             if (widgetRef.current) {
               widgetRef.current.reset();
             }
+            setPendingMessage('');
+            toggleWidget(false);
           }}>
           <Text style={styles.buttonText}>Reset Session</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
           onPress={() => {
+            const nextUser = {
+              identifier: 81058,
+              name: 'Test 2',
+              email: 'test@domix.ai',
+              phone_number: '',
+              identifier_hash: '',
+              description: 'customer',
+            };
+
+            setUser(nextUser);
             if (widgetRef.current) {
-              widgetRef.current.setUser('test-user-123', {
-                name: 'Test User',
-                email: 'test@example.com',
-                phone_number: '+1234567890',
-              });
+              widgetRef.current.setUser(nextUser.identifier, nextUser);
             }
           }}>
           <Text style={styles.buttonText}>Support Set User</Text>

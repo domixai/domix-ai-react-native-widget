@@ -11,7 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "domix-ai-react-native-widget": "file:../domix-ai-react-native-widget-0.0.28.tgz",
+    "domix-ai-react-native-widget": "file:..",
     "expo": "~51.0.28",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",

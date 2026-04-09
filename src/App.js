@@ -31,35 +31,50 @@ const DomixAIWidget = forwardRef(
       isModalVisible,
       baseUrl,
       websiteToken,
-      user = {},
+      user = null,
       locale = 'en',
       colorScheme = 'light',
       customAttributes = {},
       conversationCustomAttributes = {},
       closeModal,
     },
-    ref
+    ref,
   ) => {
     const webViewRef = useRef(null);
     const [cwCookie, setCookie] = useState('');
+    const [currentUser, setCurrentUser] = useState(user);
+    const [webViewInstanceKey, setWebViewInstanceKey] = useState(0);
+
+    useEffect(() => {
+      setCurrentUser(user);
+    }, [user]);
 
     useImperativeHandle(ref, () => ({
-      sendMessage: message => {
+      sendMessage: (message) => {
         if (webViewRef.current) {
           webViewRef.current.sendMessage(message);
         }
       },
       setUser: (identifier, userData) => {
+        if (userData) {
+          setCurrentUser({
+            ...userData,
+            identifier,
+          });
+        } else if (identifier && typeof identifier === 'object') {
+          setCurrentUser(identifier);
+        }
+
         if (webViewRef.current) {
           webViewRef.current.setUser(identifier, userData);
         }
       },
-      setCustomAttributes: attributes => {
+      setCustomAttributes: (attributes) => {
         if (webViewRef.current) {
           webViewRef.current.setCustomAttributes(attributes);
         }
       },
-      setConversationCustomAttributes: attributes => {
+      setConversationCustomAttributes: (attributes) => {
         if (webViewRef.current) {
           webViewRef.current.setConversationCustomAttributes(attributes);
         }
@@ -67,51 +82,57 @@ const DomixAIWidget = forwardRef(
       reset: async () => {
         await storeHelper.removeCookie();
         setCookie('');
+        setWebViewInstanceKey((currentKey) => currentKey + 1);
       },
       closeModal: () => closeModal(),
     }));
 
-  useEffect(() => {
-    async function fetchData() {
-      const value = await storeHelper.getCookie();
-      setCookie(value);
-    }
-    fetchData();
-  }, []);
-  const appColorScheme = Appearance.getColorScheme();
+    useEffect(() => {
+      async function fetchData() {
+        const value = await storeHelper.getCookie();
+        setCookie(value);
+      }
+      fetchData();
+    }, []);
 
-  const { headerBackgroundColor, mainBackgroundColor } = findColors({
-    colorScheme,
-    appColorScheme,
-  });
-  return (
-    <Modal
-      backdropColor={COLOR_WHITE}
-      coverScreen
-      isVisible={isModalVisible}
-      onBackButtonPress={closeModal}
-      onBackdropPress={closeModal}
-      style={styles.modal}>
-      <View style={styles.mainView}>
-        <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
-        <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
-          <WebView
-            ref={webViewRef}
-            websiteToken={websiteToken}
-            cwCookie={cwCookie}
-            user={user}
-            baseUrl={baseUrl}
-            locale={locale}
-            colorScheme={colorScheme}
-            customAttributes={customAttributes}
-            conversationCustomAttributes={conversationCustomAttributes}
-            closeModal={closeModal}
-          />
-        </SafeAreaView>
-      </View>
-    </Modal>
-  );
-});
+    const appColorScheme = Appearance.getColorScheme();
+
+    const { headerBackgroundColor, mainBackgroundColor } = findColors({
+      colorScheme,
+      appColorScheme,
+    });
+
+    return (
+      <Modal
+        backdropColor={COLOR_WHITE}
+        coverScreen
+        isVisible={isModalVisible}
+        onBackButtonPress={closeModal}
+        onBackdropPress={closeModal}
+        style={styles.modal}>
+        <View style={styles.mainView}>
+          <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
+          <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
+            <WebView
+              key={webViewInstanceKey}
+              ref={webViewRef}
+              websiteToken={websiteToken}
+              cwCookie={cwCookie}
+              user={currentUser}
+              baseUrl={baseUrl}
+              locale={locale}
+              colorScheme={colorScheme}
+              customAttributes={customAttributes}
+              conversationCustomAttributes={conversationCustomAttributes}
+              onCookieChange={setCookie}
+              closeModal={closeModal}
+            />
+          </SafeAreaView>
+        </View>
+      </Modal>
+    );
+  },
+);
 
 DomixAIWidget.propTypes = propTypes;
 

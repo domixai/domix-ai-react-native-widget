@@ -5,12 +5,13 @@ import PropTypes from 'prop-types';
 import {
   isJsonString,
   storeHelper,
-  generateScripts,
   getMessage,
   generateSendMessageScript,
   generateSetUserScript,
   generateSetCustomAttributesScript,
   generateSetConversationCustomAttributesScript,
+  generateSetLocaleScript,
+  generateSetColorSchemeScript,
 } from './utils';
 const propTypes = {
   websiteToken: PropTypes.string.isRequired,
@@ -26,6 +27,7 @@ const propTypes = {
   locale: PropTypes.string,
   customAttributes: PropTypes.shape({}),
   conversationCustomAttributes: PropTypes.shape({}),
+  onCookieChange: PropTypes.func,
   closeModal: PropTypes.func,
 };
 
@@ -37,167 +39,189 @@ const WebViewComponent = forwardRef(
       cwCookie = '',
       locale = 'en',
       colorScheme = 'light',
-      user = {},
+      user = null,
       customAttributes = {},
       conversationCustomAttributes = {},
+      onCookieChange,
       closeModal,
     },
-    ref
+    ref,
   ) => {
     const webViewRef = useRef(null);
+    const pendingScriptsRef = useRef([]);
     const [currentUrl, setCurrentUrl] = React.useState(null);
     const [loading, setLoading] = useState(true);
+    const [widgetReady, setWidgetReady] = useState(false);
+
+    const injectScript = (script) => {
+      if (!script) {
+        return;
+      }
+
+      if (webViewRef.current && widgetReady) {
+        webViewRef.current.injectJavaScript(script);
+        return;
+      }
+
+      pendingScriptsRef.current.push(script);
+    };
 
     useImperativeHandle(ref, () => ({
-      sendMessage: message => {
-        if (webViewRef.current) {
-          const script = generateSendMessageScript(message);
-          webViewRef.current.injectJavaScript(script);
-        }
+      sendMessage: (message) => {
+        injectScript(generateSendMessageScript(message));
       },
       setUser: (identifier, userData) => {
-        if (webViewRef.current) {
-          const script = generateSetUserScript(identifier, userData);
-          webViewRef.current.injectJavaScript(script);
-        }
+        injectScript(generateSetUserScript(identifier, userData));
       },
-      setCustomAttributes: attributes => {
-        if (webViewRef.current) {
-          const script = generateSetCustomAttributesScript(attributes);
-          webViewRef.current.injectJavaScript(script);
-        }
+      setCustomAttributes: (attributes) => {
+        injectScript(generateSetCustomAttributesScript(attributes));
       },
-      setConversationCustomAttributes: attributes => {
-        if (webViewRef.current) {
-          const script = generateSetConversationCustomAttributesScript(attributes);
-          webViewRef.current.injectJavaScript(script);
-        }
+      setConversationCustomAttributes: (attributes) => {
+        injectScript(generateSetConversationCustomAttributesScript(attributes));
       },
     }));
 
-    React.useEffect(() => {
-      if (webViewRef.current && !loading) {
-        const script = generateSetUserScript(user);
-        webViewRef.current.injectJavaScript(script);
-      }
-    }, [user, loading]);
+    const hasUser = !!(user && Object.keys(user).length);
 
     React.useEffect(() => {
-      if (webViewRef.current && !loading) {
-        const script = generateSetCustomAttributesScript(customAttributes);
-        webViewRef.current.injectJavaScript(script);
+      if (hasUser) {
+        injectScript(generateSetUserScript(user));
       }
-    }, [customAttributes, loading]);
+    }, [hasUser, user]);
 
     React.useEffect(() => {
-      if (webViewRef.current && !loading) {
-        const script = generateSetConversationCustomAttributesScript(conversationCustomAttributes);
-        webViewRef.current.injectJavaScript(script);
+      injectScript(generateSetCustomAttributesScript(customAttributes));
+    }, [customAttributes]);
+
+    React.useEffect(() => {
+      injectScript(generateSetConversationCustomAttributesScript(conversationCustomAttributes));
+    }, [conversationCustomAttributes]);
+
+    React.useEffect(() => {
+      injectScript(generateSetLocaleScript(locale));
+    }, [locale]);
+
+    React.useEffect(() => {
+      injectScript(generateSetColorSchemeScript(colorScheme));
+    }, [colorScheme]);
+
+    React.useEffect(() => {
+      if (!webViewRef.current || !widgetReady || pendingScriptsRef.current.length === 0) {
+        return;
       }
-    }, [conversationCustomAttributes, loading]);
-  let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
 
-  if (user && user.identifier) {
-    widgetUrl = `${widgetUrl}&identifier=${user.identifier}`;
-  }
-  if (user && user.identifier_hash) {
-    widgetUrl = `${widgetUrl}&identifier_hash=${user.identifier_hash}`;
-  }
-  if (cwCookie) {
-    widgetUrl = `${widgetUrl}&cw_conversation=${cwCookie}`;
-  }
-  const injectedJavaScript = generateScripts({
-    user,
-    locale,
-    customAttributes,
-    conversationCustomAttributes,
-    colorScheme,
-  });
+      pendingScriptsRef.current.forEach((script) => {
+        webViewRef.current.injectJavaScript(script);
+      });
+      pendingScriptsRef.current = [];
+    }, [widgetReady]);
 
-  const onShouldStartLoadWithRequest = (request) => {
-    const isMessageView = currentUrl && currentUrl.includes('#/messages');
-    const isAttachmentUrl = !widgetUrl.includes(request.url);
-    // Open the attachments only in the external browser
-    const shouldRedirectToBrowser = isMessageView && isAttachmentUrl;
-    if (shouldRedirectToBrowser) {
-      Linking.openURL(request.url);
-      return false;
+    let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
+
+    if (hasUser && user.identifier) {
+      widgetUrl = `${widgetUrl}&identifier=${user.identifier}`;
+    }
+    if (hasUser && user.identifier_hash) {
+      widgetUrl = `${widgetUrl}&identifier_hash=${user.identifier_hash}`;
+    }
+    if (cwCookie) {
+      widgetUrl = `${widgetUrl}&cw_conversation=${cwCookie}`;
     }
 
-    return true;
-  };
+    const onShouldStartLoadWithRequest = (request) => {
+      const isMessageView = currentUrl && currentUrl.includes('#/messages');
+      const isAttachmentUrl = !widgetUrl.includes(request.url);
+      // Open the attachments only in the external browser
+      const shouldRedirectToBrowser = isMessageView && isAttachmentUrl;
+      if (shouldRedirectToBrowser) {
+        Linking.openURL(request.url);
+        return false;
+      }
 
-  const handleWebViewNavigationStateChange = (newNavState) => {
-    setCurrentUrl(newNavState.url);
-  };
-
-  const opacity = useMemo(() => {
-    if (loading) {
-      return {
-        opacity: 0,
-      };
-    }
-    return {
-      opacity: 1,
+      return true;
     };
-  }, [loading]);
 
-  const renderLoadingComponent = () => {
+    const handleWebViewNavigationStateChange = (newNavState) => {
+      setCurrentUrl(newNavState.url);
+    };
+
+    const opacity = useMemo(() => {
+      if (loading) {
+        return {
+          opacity: 0,
+        };
+      }
+      return {
+        opacity: 1,
+      };
+    }, [loading]);
+
+    const renderLoadingComponent = () => {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1f93ff" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      );
+    };
+
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1f93ff" />
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={styles.container}>
+        <WebView
+          ref={Platform.OS === 'web' ? null : webViewRef}
+          source={{
+            uri: widgetUrl,
+          }}
+          onMessage={(event) => {
+            const { data } = event.nativeEvent;
+            const message = getMessage(data);
+            if (isJsonString(message)) {
+              const parsedMessage = JSON.parse(message);
+              const { event: eventType, type, data } = parsedMessage;
+              const eventName = eventType || type;
+              if (eventName === 'loaded') {
+                const {
+                  config: { authToken },
+                } = parsedMessage;
+                storeHelper.storeCookie(authToken);
+                if (onCookieChange) {
+                  onCookieChange(authToken);
+                }
+                setWidgetReady(true);
+              }
+              if (eventName === 'setAuthCookie') {
+                const { widgetAuthToken } = data;
+                storeHelper.storeCookie(widgetAuthToken);
+                if (onCookieChange) {
+                  onCookieChange(widgetAuthToken);
+                }
+              }
+              if (eventName === 'close-widget') {
+                closeModal();
+              }
+            }
+          }}
+          scalesPageToFit
+          useWebKit
+          sharedCookiesEnabled
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          style={[styles.WebViewStyle, opacity]}
+          onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+          onNavigationStateChange={handleWebViewNavigationStateChange}
+          onLoadStart={() => {
+            setLoading(true);
+            setWidgetReady(false);
+          }}
+          onLoadProgress={() => setLoading(true)}
+          onLoadEnd={() => setLoading(false)}
+          scrollEnabled
+        />
+        {loading && renderLoadingComponent()}
       </View>
     );
-  };
-
-  return (
-    <View style={styles.container}>
-      <WebView
-        ref={Platform.OS === 'web' ? null : webViewRef}
-        source={{
-          uri: widgetUrl,
-        }}
-        onMessage={(event) => {
-          const { data } = event.nativeEvent;
-          const message = getMessage(data);
-          if (isJsonString(message)) {
-            const parsedMessage = JSON.parse(message);
-            const { event: eventType, type, data } = parsedMessage;
-            const eventName = eventType || type;
-            if (eventName === 'loaded') {
-              const {
-                config: { authToken },
-              } = parsedMessage;
-              storeHelper.storeCookie(authToken);
-            }
-            if (eventName === 'setAuthCookie') {
-              const { widgetAuthToken } = data;
-              storeHelper.storeCookie(widgetAuthToken);
-            }
-            if (eventName === 'close-widget') {
-              closeModal();
-            }
-          }
-        }}
-        scalesPageToFit
-        useWebKit
-        sharedCookiesEnabled
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        style={[styles.WebViewStyle, opacity]}
-        injectedJavaScript={injectedJavaScript}
-        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-        onNavigationStateChange={handleWebViewNavigationStateChange}
-        onLoadStart={() => setLoading(true)}
-        onLoadProgress={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
-        scrollEnabled
-      />
-      {loading && renderLoadingComponent()}
-    </View>
-  );
-});
+  },
+);
 
 const styles = StyleSheet.create({
   container: {

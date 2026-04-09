@@ -18,8 +18,23 @@ export const isJsonString = (string) => {
 };
 
 export const createDomixPostMessage = (object) => {
-  const stringfyObject = `'${DOMIX_PREFIX}${JSON.stringify(object)}'`;
-  const script = `window.postMessage(${stringfyObject});`;
+  const messagePayload = JSON.stringify(`${DOMIX_PREFIX}${JSON.stringify(object)}`);
+  const script = `
+    (function() {
+      var messageData = ${messagePayload};
+      var messageEvent;
+
+      try {
+        messageEvent = new MessageEvent('message', { data: messageData });
+      } catch (error) {
+        messageEvent = document.createEvent('MessageEvent');
+        messageEvent.initMessageEvent('message', true, true, messageData, '*', '', window, null);
+      }
+
+      window.dispatchEvent(messageEvent);
+    })();
+    true;
+  `;
   return script;
 };
 

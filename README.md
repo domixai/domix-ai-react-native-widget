@@ -27,6 +27,14 @@ npm install --save domix-ai-react-native-widget
 
 This library depends on [react-native-webview](https://www.npmjs.com/package/react-native-webview) and [async-storage](https://github.com/react-native-async-storage/async-storage). Please follow the instructions provided in the docs.
 
+For local package development, the `/Example` app is linked to the package source with `file:..` and uses `Example/metro.config.js`. Start Expo with a clean cache after package changes:
+
+```sh
+cd Example
+npm install
+npm start -c
+```
+
 ### iOS Installation
 
 If you're using React Native versions > 60.0, it's relatively straightforward.
@@ -167,9 +175,9 @@ The whole example is in the `/Example` folder.
   </tr>
   <tr>
 	  <td>user</td>
-    <td> {} </td>
+    <td> null </td>
     <td> Object </td>
-    <td>User information about the user like email, username and avatar_url</td>
+    <td>User information about the contact. If you keep passing the same user after reset, the widget will identify that same contact again on the next open.</td>
   </tr>
   <tr>
    <td>customAttributes</td>
@@ -204,6 +212,13 @@ widgetRef.current.setUser('user-identifier-key', {
   phone_number: '+1234567890',
 });
 
+// Or pass a full user object that already includes identifier
+widgetRef.current.setUser({
+  identifier: 'user-identifier-key',
+  email: 'john@gmail.com',
+  name: 'John Samuel',
+});
+
 // To set custom attributes
 widgetRef.current.setCustomAttributes({ accountId: 1, status: 'active' });
 
@@ -235,8 +250,8 @@ widgetRef.current.reset();
   </tr>
   <tr>
     <td>setUser</td>
-    <td>user (Object)</td>
-    <td>Updates user information for the widget.</td>
+    <td>identifier (String), user (Object) or user (Object)</td>
+    <td>Updates user information for the widget and keeps the latest user for future opens.</td>
   </tr>
   <tr>
     <td>setCustomAttributes</td>
@@ -256,10 +271,16 @@ widgetRef.current.reset();
   <tr>
     <td>reset</td>
     <td>-</td>
-    <td>Resets the widget session and clears cookies.</td>
+    <td>Resets the current widget session and clears the stored conversation token. If you still render the widget with the same <code>user</code> prop, the next open will identify that same user again.</td>
   </tr>
 </tbody>
 </table>
+
+### Reset behavior
+
+- `reset()` clears the current conversation session and forces the embedded widget to reload.
+- If you want the next open to be anonymous, render the widget with `user={null}` after reset.
+- If you want the next open to use another contact, update the `user` prop or call `setUser(...)` before reopening.
 
 ## Feedback & Contributing
 
