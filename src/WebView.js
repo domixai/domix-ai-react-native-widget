@@ -207,14 +207,36 @@ const WebViewComponent = forwardRef(
           javaScriptEnabled={true}
           domStorageEnabled={true}
           style={[styles.WebViewStyle, opacity]}
+          originWhitelist={['*']}
+          mixedContentMode="always"
           onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
           onNavigationStateChange={handleWebViewNavigationStateChange}
           onLoadStart={() => {
+            console.log('[WebView] Load Started');
             setLoading(true);
             setWidgetReady(false);
           }}
-          onLoadProgress={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
+          onLoadProgress={(event) => {
+            const { progress } = event.nativeEvent;
+            console.log(`[WebView] Loading progress: ${progress * 100}%`);
+            if (progress === 1) {
+              setLoading(false);
+            }
+          }}
+          onLoadEnd={() => {
+            console.log('[WebView] Load Ended');
+            setLoading(false);
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('[WebView] WebView Error: ', nativeEvent);
+            setLoading(false);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('[WebView] HTTP Error: ', nativeEvent);
+            setLoading(false);
+          }}
           scrollEnabled
         />
         {loading && renderLoadingComponent()}
