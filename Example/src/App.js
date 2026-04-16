@@ -94,7 +94,7 @@ const DomixAIWidget = forwardRef(
       style={styles.modal}>
       <View style={styles.mainView}>
         <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
-        <SafeAreaView style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
+        <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
           <WebView
             ref={webViewRef}
             websiteToken={websiteToken}
@@ -107,7 +107,7 @@ const DomixAIWidget = forwardRef(
             conversationCustomAttributes={conversationCustomAttributes}
             closeModal={closeModal}
           />
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );

@@ -172,6 +172,8 @@ const WebViewComponent = forwardRef(
           source={{
             uri: widgetUrl,
           }}
+          automaticallyAdjustContentInsets={Platform.OS === 'ios'}
+          contentInsetAdjustmentBehavior={Platform.OS === 'ios' ? 'automatic' : 'never'}
           onMessage={(event) => {
             const { data } = event.nativeEvent;
             const message = getMessage(data);
@@ -203,7 +205,9 @@ const WebViewComponent = forwardRef(
           }}
           scalesPageToFit
           useWebKit
+          cacheEnabled={false}
           sharedCookiesEnabled
+          thirdPartyCookiesEnabled
           javaScriptEnabled={true}
           domStorageEnabled={true}
           style={[styles.WebViewStyle, opacity]}

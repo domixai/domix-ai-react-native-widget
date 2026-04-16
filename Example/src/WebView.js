@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Linking, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, Linking, View, ActivityIndicator, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import PropTypes from 'prop-types';
 import { isJsonString, storeHelper, generateScripts, getMessage } from './utils';
@@ -85,6 +85,8 @@ const WebViewComponent = ({
         source={{
           uri: widgetUrl,
         }}
+        automaticallyAdjustContentInsets={Platform.OS === 'ios'}
+        contentInsetAdjustmentBehavior={Platform.OS === 'ios' ? 'automatic' : 'never'}
         onMessage={(event) => {
           const { data } = event.nativeEvent;
           const message = getMessage(data);
@@ -104,7 +106,9 @@ const WebViewComponent = ({
         }}
         scalesPageToFit
         useWebKit
+        cacheEnabled={false}
         sharedCookiesEnabled
+        thirdPartyCookiesEnabled
         javaScriptEnabled={true}
         domStorageEnabled={true}
         style={[styles.WebViewStyle, opacity]}
