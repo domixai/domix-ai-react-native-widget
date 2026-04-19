@@ -41,54 +41,6 @@ const App = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) =>
-            setUser((prevUser) => ({
-              ...prevUser,
-              name: text,
-            }))
-          }
-          value={user.name}
-        />
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) =>
-            setUser((prevUser) => ({
-              ...prevUser,
-              email: text,
-              identifier: text,
-            }))
-          }
-          value={user.email}
-        />
-        <Text style={styles.label}>Language</Text>
-        <TextInput style={styles.input} value={locale} onChangeText={() => setLocale(locale)} />
-        <Text style={styles.label}>Avatar</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) =>
-            setUser((prevUser) => ({
-              ...prevUser,
-              avatar_url: text,
-            }))
-          }
-          value={user.avatar_url}
-        />
-        <Text style={styles.label}>Identifier Hash (HMAC)</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) =>
-            setUser((prevUser) => ({
-              ...prevUser,
-              identifier_hash: text,
-            }))
-          }
-          value={user.identifier_hash}
-          placeholder="Paste HMAC sha256 hash here"
-        />
         <TouchableOpacity style={styles.button} onPress={() => toggleWidget(true)}>
           <Text style={styles.buttonText}>Open Domix AI Widget</Text>
         </TouchableOpacity>

@@ -110,8 +110,7 @@ const DomixAIWidget = forwardRef(
         onBackButtonPress={closeModal}
         onBackdropPress={closeModal}
         style={styles.modal}>
-        <View style={styles.mainView}>
-          <SafeAreaView style={[styles.headerView, { backgroundColor: headerBackgroundColor }]} />
+        <SafeAreaView style={[styles.mainView, { backgroundColor: headerBackgroundColor }]}>
           <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
             <WebView
               key={webViewInstanceKey}
@@ -128,7 +127,7 @@ const DomixAIWidget = forwardRef(
               closeModal={closeModal}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   },
