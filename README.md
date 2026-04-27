@@ -89,6 +89,9 @@ const App = () => {
           customAttributes={customAttributes}
           conversationCustomAttributes={conversationCustomAttributes}
           colorScheme={colorScheme}
+          onEvent={(eventName, data) => {
+            console.log(eventName, data);
+          }}
         />
       )}
     </SafeAreaView>
@@ -190,6 +193,12 @@ The whole example is in the `/Example` folder.
     <td> {} </td>
     <td> Object </td>
     <td>Additional information about the conversation</td>
+  </tr>
+  <tr>
+    <td>onEvent</td>
+    <td> - </td>
+    <td> Function </td>
+    <td>Callback that receives events from the widget (e.g., <code>domix:ready</code>)</td>
   </tr>
  </tbody>
 </table>

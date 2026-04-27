@@ -8,12 +8,12 @@ const App = () => {
   const [showWidget, toggleWidget] = useState(false);
   const [pendingMessage, setPendingMessage] = useState('');
   const [user, setUser] = useState({
-    identifier: 8596,
-    name: 'test 1',
-    email: 'test1@domix.ai',
-    phone_number: '',
-    identifier_hash: '',
-    description: 'customer',
+      identifier: 1234,
+      name: 'Test 1',
+      email: 'test1@domix.ai',
+      phone_number: '',
+      identifier_hash: '',
+      description: 'customer',
   });
 
   const customAttributes = {
@@ -72,7 +72,7 @@ const App = () => {
           style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
           onPress={() => {
             const nextUser = {
-              identifier: 81058,
+              identifier: 123,
               name: 'Test 2',
               email: 'test@domix.ai',
               phone_number: '',
@@ -99,6 +99,9 @@ const App = () => {
         user={user}
         customAttributes={customAttributes}
         conversationCustomAttributes={conversationCustomAttributes}
+        onEvent={(eventName, data) => {
+          console.log('Domix AI Event:', eventName, data);
+        }}
       />
     </SafeAreaView>
   );

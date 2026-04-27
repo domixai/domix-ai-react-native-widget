@@ -17,6 +17,7 @@ declare module 'domix-ai-react-native-widget' {
     };
     // This can actually be any object
     customAttributes?: Record<string, unknown>;
+    onEvent?: (eventName: string, data: any) => void;
   }
 
   class DomixAIWidget extends React.Component<DomixAIWidgetProps, any> {}

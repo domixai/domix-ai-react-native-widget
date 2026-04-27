@@ -12,6 +12,7 @@ import {
   generateSetConversationCustomAttributesScript,
   generateSetLocaleScript,
   generateSetColorSchemeScript,
+  generateScripts,
 } from './utils';
 const propTypes = {
   websiteToken: PropTypes.string.isRequired,
@@ -29,6 +30,7 @@ const propTypes = {
   conversationCustomAttributes: PropTypes.shape({}),
   onCookieChange: PropTypes.func,
   closeModal: PropTypes.func,
+  onEvent: PropTypes.func,
 };
 
 const WebViewComponent = forwardRef(
@@ -44,6 +46,7 @@ const WebViewComponent = forwardRef(
       conversationCustomAttributes = {},
       onCookieChange,
       closeModal,
+      onEvent,
     },
     ref,
   ) => {
@@ -52,6 +55,13 @@ const WebViewComponent = forwardRef(
     const [currentUrl, setCurrentUrl] = React.useState(null);
     const [loading, setLoading] = useState(true);
     const [widgetReady, setWidgetReady] = useState(false);
+    const activeCookieRef = useRef(cwCookie);
+
+    React.useEffect(() => {
+      if (cwCookie && !widgetReady) {
+        activeCookieRef.current = cwCookie;
+      }
+    }, [cwCookie, widgetReady]);
 
     const injectScript = (script) => {
       if (!script) {
@@ -81,51 +91,47 @@ const WebViewComponent = forwardRef(
       },
     }));
 
-    const hasUser = !!(user && Object.keys(user).length);
 
     React.useEffect(() => {
-      if (hasUser) {
-        injectScript(generateSetUserScript(user));
-      }
-    }, [hasUser, user]);
-
-    React.useEffect(() => {
-      injectScript(generateSetCustomAttributesScript(customAttributes));
-    }, [customAttributes]);
-
-    React.useEffect(() => {
-      injectScript(generateSetConversationCustomAttributesScript(conversationCustomAttributes));
-    }, [conversationCustomAttributes]);
-
-    React.useEffect(() => {
-      injectScript(generateSetLocaleScript(locale));
-    }, [locale]);
-
-    React.useEffect(() => {
-      injectScript(generateSetColorSchemeScript(colorScheme));
-    }, [colorScheme]);
-
-    React.useEffect(() => {
-      if (!webViewRef.current || !widgetReady || pendingScriptsRef.current.length === 0) {
+      if (!webViewRef.current || !widgetReady) {
         return;
       }
 
-      pendingScriptsRef.current.forEach((script) => {
-        webViewRef.current.injectJavaScript(script);
+      const script = generateScripts({
+        colorScheme,
+        user,
+        locale,
+        customAttributes,
+        conversationCustomAttributes,
       });
-      pendingScriptsRef.current = [];
-    }, [widgetReady]);
+      webViewRef.current.injectJavaScript(script);
 
+      if (pendingScriptsRef.current.length > 0) {
+        pendingScriptsRef.current.forEach((s) => {
+          webViewRef.current.injectJavaScript(s);
+        });
+        pendingScriptsRef.current = [];
+      }
+    }, [
+      widgetReady,
+      colorScheme,
+      user,
+      locale,
+      customAttributes,
+      conversationCustomAttributes,
+    ]);
+
+    const hasUser = !!(user && Object.keys(user).length);
     let widgetUrl = `${baseUrl}/widget?website_token=${websiteToken}&locale=${locale}`;
 
-    if (hasUser && user.identifier) {
+    if (hasUser && user?.identifier) {
       widgetUrl = `${widgetUrl}&identifier=${user.identifier}`;
     }
-    if (hasUser && user.identifier_hash) {
+    if (hasUser && user?.identifier_hash) {
       widgetUrl = `${widgetUrl}&identifier_hash=${user.identifier_hash}`;
     }
-    if (cwCookie) {
-      widgetUrl = `${widgetUrl}&cw_conversation=${cwCookie}`;
+    if (activeCookieRef.current) {
+      widgetUrl = `${widgetUrl}&cw_conversation=${activeCookieRef.current}`;
     }
 
     const onShouldStartLoadWithRequest = (request) => {
@@ -200,6 +206,9 @@ const WebViewComponent = forwardRef(
               }
               if (eventName === 'close-widget') {
                 closeModal();
+              }
+              if (onEvent) {
+                onEvent(eventName, parsedMessage);
               }
             }
           }}

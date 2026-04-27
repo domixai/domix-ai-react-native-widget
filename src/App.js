@@ -23,6 +23,7 @@ const propTypes = {
   customAttributes: PropTypes.shape({}),
   conversationCustomAttributes: PropTypes.shape({}),
   closeModal: PropTypes.func,
+  onEvent: PropTypes.func,
 };
 
 const DomixAIWidget = forwardRef(
@@ -37,6 +38,7 @@ const DomixAIWidget = forwardRef(
       customAttributes = {},
       conversationCustomAttributes = {},
       closeModal,
+      onEvent,
     },
     ref,
   ) => {
@@ -125,6 +127,7 @@ const DomixAIWidget = forwardRef(
               conversationCustomAttributes={conversationCustomAttributes}
               onCookieChange={setCookie}
               closeModal={closeModal}
+              onEvent={onEvent}
             />
           </View>
         </SafeAreaView>
