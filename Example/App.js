@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import DomixAIWidget from 'domix-ai-react-native-widget';
 
 import { SafeAreaView, Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const App = () => {
   const widgetRef = useRef(null);
@@ -39,71 +40,73 @@ const App = () => {
   }, [showWidget, pendingMessage]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View>
-        <TouchableOpacity style={styles.button} onPress={() => toggleWidget(true)}>
-          <Text style={styles.buttonText}>Open Domix AI Widget</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { marginTop: 10, backgroundColor: '#4CAF50' }]}
-          onPress={() => {
-            if (showWidget && widgetRef.current) {
-              widgetRef.current.sendMessage('Hello! This is a test message.');
-              return;
-            }
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <View>
+          <TouchableOpacity style={styles.button} onPress={() => toggleWidget(true)}>
+            <Text style={styles.buttonText}>Open Domix AI Widget</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 10, backgroundColor: '#4CAF50' }]}
+            onPress={() => {
+              if (showWidget && widgetRef.current) {
+                widgetRef.current.sendMessage('Hello! This is a test message.');
+                return;
+              }
 
-            setPendingMessage('Hello! This is a test message.');
-            toggleWidget(true);
-          }}>
-          <Text style={styles.buttonText}>Send Test Message</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { marginTop: 10, backgroundColor: '#f44336' }]}
-          onPress={() => {
-            if (widgetRef.current) {
-              widgetRef.current.reset();
-            }
-            setPendingMessage('');
-            toggleWidget(false);
-          }}>
-          <Text style={styles.buttonText}>Reset Session</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
-          onPress={() => {
-            const nextUser = {
-              identifier: 123,
-              name: 'Test 2',
-              email: 'test@domix.ai',
-              phone_number: '',
-              identifier_hash: '',
-              description: 'customer',
-            };
+              setPendingMessage('Hello! This is a test message.');
+              toggleWidget(true);
+            }}>
+            <Text style={styles.buttonText}>Send Test Message</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 10, backgroundColor: '#f44336' }]}
+            onPress={() => {
+              if (widgetRef.current) {
+                widgetRef.current.reset();
+              }
+              setPendingMessage('');
+              toggleWidget(false);
+            }}>
+            <Text style={styles.buttonText}>Reset Session</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
+            onPress={() => {
+              const nextUser = {
+                identifier: 123,
+                name: 'Test 2',
+                email: 'test@domix.ai',
+                phone_number: '',
+                identifier_hash: '',
+                description: 'customer',
+              };
 
-            setUser(nextUser);
-            if (widgetRef.current) {
-              widgetRef.current.setUser(nextUser.identifier, nextUser);
-            }
-          }}>
-          <Text style={styles.buttonText}>Support Set User</Text>
-        </TouchableOpacity>
-      </View>
-      <DomixAIWidget
-        ref={widgetRef}
-        websiteToken={websiteToken}
-        locale={locale}
-        baseUrl={baseUrl}
-        colorScheme="light"
-        closeModal={() => toggleWidget(false)}
-        isModalVisible={showWidget}
-        user={user}
-        customAttributes={customAttributes}
-        conversationCustomAttributes={conversationCustomAttributes}
-        onEvent={(eventName, data) => {
-          console.log('Domix AI Event:', eventName, data);
-        }}
-      />
-    </SafeAreaView>
+              setUser(nextUser);
+              if (widgetRef.current) {
+                widgetRef.current.setUser(nextUser.identifier, nextUser);
+              }
+            }}>
+            <Text style={styles.buttonText}>Support Set User</Text>
+          </TouchableOpacity>
+        </View>
+        <DomixAIWidget
+          ref={widgetRef}
+          websiteToken={websiteToken}
+          locale={locale}
+          baseUrl={baseUrl}
+          colorScheme="light"
+          closeModal={() => toggleWidget(false)}
+          isModalVisible={showWidget}
+          user={user}
+          customAttributes={customAttributes}
+          conversationCustomAttributes={conversationCustomAttributes}
+          onEvent={(eventName, data) => {
+            console.log('Domix AI Event:', eventName, data);
+          }}
+        />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

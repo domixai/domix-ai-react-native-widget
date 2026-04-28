@@ -1,5 +1,6 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { SafeAreaView, Appearance, View, Platform, StatusBar } from 'react-native';
+import { Appearance, View, Platform, StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import PropTypes from 'prop-types';
 import { storeHelper, findColors } from './utils';
@@ -46,6 +47,7 @@ const DomixAIWidget = forwardRef(
     const [cwCookie, setCookie] = useState('');
     const [currentUser, setCurrentUser] = useState(user);
     const [webViewInstanceKey, setWebViewInstanceKey] = useState(0);
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
       setCurrentUser(user);
@@ -120,10 +122,12 @@ const DomixAIWidget = forwardRef(
             styles.mainView,
             {
               backgroundColor: headerBackgroundColor,
-              paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+              paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : insets.top,
             },
           ]}>
-          <SafeAreaView style={[styles.mainViewSafe, { backgroundColor: headerBackgroundColor }]}>
+          <SafeAreaView
+            edges={['bottom', 'left', 'right']}
+            style={[styles.mainViewSafe, { backgroundColor: headerBackgroundColor }]}>
             <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
               <WebView
                 key={webViewInstanceKey}
