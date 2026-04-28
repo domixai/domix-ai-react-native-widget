@@ -9,5 +9,8 @@ const styles = StyleSheet.create({
   mainView: {
     flex: 1,
   },
+  mainViewSafe: {
+    flex: 1,
+  },
 });
 export default styles;

@@ -185,7 +185,7 @@ const WebViewComponent = forwardRef(
             const message = getMessage(data);
             if (isJsonString(message)) {
               const parsedMessage = JSON.parse(message);
-              const { event: eventType, type, data } = parsedMessage;
+              const { event: eventType, type, data: payloadData } = parsedMessage;
               const eventName = eventType || type;
               if (eventName === 'loaded') {
                 const {
@@ -198,13 +198,17 @@ const WebViewComponent = forwardRef(
                 setWidgetReady(true);
               }
               if (eventName === 'setAuthCookie') {
-                const { widgetAuthToken } = data;
+                const { widgetAuthToken } = payloadData;
                 storeHelper.storeCookie(widgetAuthToken);
                 if (onCookieChange) {
                   onCookieChange(widgetAuthToken);
                 }
               }
-              if (eventName === 'close-widget') {
+              if (
+                eventName === 'close-widget' ||
+                eventName === 'closeWindow' ||
+                eventName === 'domix:closed'
+              ) {
                 closeModal();
               }
               if (onEvent) {

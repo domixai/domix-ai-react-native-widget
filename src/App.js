@@ -1,5 +1,5 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { SafeAreaView, Appearance, View } from 'react-native';
+import { SafeAreaView, Appearance, View, Platform, StatusBar } from 'react-native';
 import Modal from 'react-native-modal';
 import PropTypes from 'prop-types';
 import { storeHelper, findColors } from './utils';
@@ -111,26 +111,38 @@ const DomixAIWidget = forwardRef(
         isVisible={isModalVisible}
         onBackButtonPress={closeModal}
         onBackdropPress={closeModal}
-        style={styles.modal}>
-        <SafeAreaView style={[styles.mainView, { backgroundColor: headerBackgroundColor }]}>
-          <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
-            <WebView
-              key={webViewInstanceKey}
-              ref={webViewRef}
-              websiteToken={websiteToken}
-              cwCookie={cwCookie}
-              user={currentUser}
-              baseUrl={baseUrl}
-              locale={locale}
-              colorScheme={colorScheme}
-              customAttributes={customAttributes}
-              conversationCustomAttributes={conversationCustomAttributes}
-              onCookieChange={setCookie}
-              closeModal={closeModal}
-              onEvent={onEvent}
-            />
-          </View>
-        </SafeAreaView>
+        style={styles.modal}
+        useNativeDriver={false}
+        statusBarTranslucent
+        propagateSwipe>
+        <View
+          style={[
+            styles.mainView,
+            {
+              backgroundColor: headerBackgroundColor,
+              paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+            },
+          ]}>
+          <SafeAreaView style={[styles.mainViewSafe, { backgroundColor: headerBackgroundColor }]}>
+            <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
+              <WebView
+                key={webViewInstanceKey}
+                ref={webViewRef}
+                websiteToken={websiteToken}
+                cwCookie={cwCookie}
+                user={currentUser}
+                baseUrl={baseUrl}
+                locale={locale}
+                colorScheme={colorScheme}
+                customAttributes={customAttributes}
+                conversationCustomAttributes={conversationCustomAttributes}
+                onCookieChange={setCookie}
+                closeModal={closeModal}
+                onEvent={onEvent}
+              />
+            </View>
+          </SafeAreaView>
+        </View>
       </Modal>
     );
   },
