@@ -23,15 +23,6 @@ const App = () => {
       description: '',
   });
 
-  //   const [user, setUser] = useState({
-  //     identifier: 8596,
-  //     name: "Shymaa Mohmed",
-  //     email: "shymaa.mohmed91@gmail.com",
-  //     phone_number: "+201069541592",
-  //     identifier_hash: "a00e308dc2110027877a325008978c9dc79ff4d0d46e64148e249623e2defe04",
-  //     description: 'customer',
-  // });
-
   const customAttributes = {
     accountId: 1,
     pricingPlan: 'paid',
