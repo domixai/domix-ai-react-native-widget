@@ -3,9 +3,23 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Platform, Text, ScrollView } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useDomix } from '../DomixProvider';
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { Modal } from 'react-native';
+
+// Defensive imports for bare React Native pickers
+let launchImageLibrary, launchCamera, DocumentPicker;
+try {
+  const ImagePicker = require('react-native-image-picker');
+  launchImageLibrary = ImagePicker.launchImageLibrary;
+  launchCamera = ImagePicker.launchCamera;
+} catch (e) {
+  // Not installed
+}
+
+try {
+  DocumentPicker = require('react-native-document-picker').default;
+} catch (e) {
+  // Not installed
+}
 
 const EMOJI_ICON = `<svg width="24" height="24" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.999c5.524 0 10.002 4.478 10.002 10.002 0 5.523-4.478 10.001-10.002 10.001-5.524 0-10.002-4.478-10.002-10.001C1.998 6.477 6.476 1.999 12 1.999Zm0 1.5a8.502 8.502 0 1 0 0 17.003A8.502 8.502 0 0 0 12 3.5ZM8.462 14.784A4.491 4.491 0 0 0 12 16.502a4.492 4.492 0 0 0 3.535-1.714.75.75 0 1 1 1.177.93A5.991 5.991 0 0 1 12 18.002a5.991 5.991 0 0 1-4.716-2.29.75.75 0 0 1 1.178-.928ZM9 8.75a1.25 1.25 0 1 1 0 2.499A1.25 1.25 0 0 1 9 8.75Zm6 0a1.25 1.25 0 1 1 0 2.499 1.25 1.25 0 0 1 0-2.499Z" fill="currentColor"></path></svg>`;
 
@@ -68,45 +82,59 @@ const MessageInput = () => {
   };
 
   const handlePhotoLibrary = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+    if (typeof launchImageLibrary !== 'function') {
+      alert('Photo library is not available. Please install react-native-image-picker and rebuild your app.');
+      return;
+    }
+    const result = await launchImageLibrary({
+      mediaType: 'mixed',
       quality: 1,
+      selectionLimit: 1,
     });
 
-    if (!result.canceled) {
+    if (!result.didCancel && result.assets && result.assets.length > 0) {
       onFilePicked(result.assets);
     }
   };
 
   const handleCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+    if (typeof launchCamera !== 'function') {
+      alert('Camera is not available. Please install react-native-image-picker and rebuild your app.');
+      return;
+    }
+    const result = await launchCamera({
+      mediaType: 'mixed',
       quality: 1,
     });
 
-    if (!result.canceled) {
+    if (!result.didCancel && result.assets && result.assets.length > 0) {
       onFilePicked(result.assets);
     }
   };
 
   const handleDocument = async () => {
+    if (!DocumentPicker || typeof DocumentPicker.pick !== 'function') {
+      alert('Document picker is not available. Please install react-native-document-picker and rebuild your app.');
+      return;
+    }
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: true,
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
       });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        onFilePicked(result.assets);
+      if (result && result.length > 0) {
+        // DocumentPicker returns an array of results
+        const assets = result.map(file => ({
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        }));
+        onFilePicked(assets);
       }
     } catch (err) {
-      console.error('Domix SDK: Attachment error', err);
+      if (!DocumentPicker.isCancel(err)) {
+        console.error('Domix SDK: Attachment error', err);
+      }
     }
   };
 
