@@ -23,6 +23,61 @@ class DomixClient {
       hasSavedToken: !!savedToken 
     });
     
+    const { Platform } = require('react-native');
+    let DeviceInfo;
+    try {
+      const module = require('react-native-device-info');
+      DeviceInfo = module ? (module.default || module) : null;
+    } catch (e) {
+      console.warn('Domix SDK: react-native-device-info not found, falling back to basic platform info');
+    }
+
+    const sdkVersion = '0.0.37';
+    let deviceModel = Platform.OS === 'ios' ? (Platform.isPad ? 'iPad' : 'iPhone') : 'Android Device';
+    let manufacturer = Platform.OS === 'ios' ? 'Apple' : 'Android';
+    let brand = Platform.OS === 'ios' ? 'Apple' : 'Android';
+    let appVersion = '1.0.0';
+    let appBuildNumber = '1';
+    let uniqueId = 'unknown';
+
+    if (DeviceInfo) {
+      try {
+        deviceModel = DeviceInfo.getModel() || deviceModel;
+        manufacturer = DeviceInfo.getManufacturerSync() || manufacturer;
+        brand = DeviceInfo.getBrand() || brand;
+        appVersion = DeviceInfo.getVersion() || appVersion;
+        appBuildNumber = DeviceInfo.getBuildNumber() || appBuildNumber;
+        uniqueId = DeviceInfo.getUniqueIdSync() || uniqueId;
+      } catch (err) {
+        console.warn('Domix SDK: Error fetching device info', err);
+      }
+    }
+
+    const browserAttributes = {
+      device_name: deviceModel,
+      browser_name: 'React Native SDK',
+      browser_version: sdkVersion,
+      platform_name: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      platform_version: String(Platform.Version),
+    };
+    const osAttributes = {
+      name: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      version: String(Platform.Version),
+    };
+    
+    const deviceCustomAttributes = {
+      sdk_version: sdkVersion,
+      app_version: appVersion,
+      app_build: appBuildNumber,
+      platform: Platform.OS,
+      os_version: String(Platform.Version),
+      manufacturer: manufacturer,
+      brand: brand,
+      model: deviceModel,
+      device_id: uniqueId,
+      is_tablet: Platform.isPad || false,
+    };
+
     const response = await fetch(`${this.baseUrl}/api/v1/widget/config?website_token=${this.websiteToken}`, {
       method: 'POST',
       headers: {
@@ -36,8 +91,21 @@ class DomixClient {
           identifier: contact.identifier ? String(contact.identifier) : undefined,
           identifier_hash: contact.identifier_hash,
           phone_number: contact.phone_number,
-          custom_attributes: contact.custom_attributes,
-        } : undefined
+          custom_attributes: {
+            ...contact.custom_attributes,
+            ...deviceCustomAttributes,
+          },
+          additional_attributes: {
+            browser: browserAttributes,
+            os: osAttributes,
+            ...deviceCustomAttributes,
+          }
+        } : undefined,
+        additional_attributes: {
+          browser: browserAttributes,
+          os: osAttributes,
+          ...deviceCustomAttributes,
+        }
       }),
     });
 

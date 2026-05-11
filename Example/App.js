@@ -15,12 +15,12 @@ const App = () => {
     setShowWidget(visible);
   };
   const [user, setUser] = useState({
-      identifier: 123,
-      name: 'Test',
-      email: 'test@domix.ai',
-      phone_number: '',
-      identifier_hash: '',
-      description: '',
+      identifier: 81058,
+      name: 'Mansi Test',
+      email: 'muhamadelmansi@chefaa.com',
+      phone_number: '+201099020085',
+      identifier_hash: '7e7d4139a5059be0c720a41bc9696f95061d23ffe2c526f86e6148919b2a46f0',
+      description: 'customer',
   });
 
   //   const [user, setUser] = useState({
@@ -41,7 +41,7 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = '';
+  const websiteToken = 'zwreKiAbwntXTtKx1367HwzW';
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 
@@ -55,6 +55,7 @@ const App = () => {
     hasSentPending.current = true;
     widgetRef.current.sendMessage(pendingMessage);
     setPendingMessage('');
+    
     // Reset the ref after a delay or when pendingMessage is cleared
     setTimeout(() => {
       hasSentPending.current = false;
@@ -104,12 +105,12 @@ const App = () => {
             style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
             onPress={() => {
               const nextUser = {
-                identifier: 124,
-                name: 'test 2',
-                email: 'test2@domix.ai',
-                phone_number: '',
-                identifier_hash: '',
-                description: '',
+                identifier: 8596,
+                name: "Shymaa Mohmed",
+                email: "shymaa.mohmed91@gmail.com",
+                phone_number: "+201069541592",
+                identifier_hash: "",
+                description: 'customer',
               };
 
               setUser(nextUser);

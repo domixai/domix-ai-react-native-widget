@@ -1,6 +1,6 @@
 {
   "name": "domix-ai-react-native-widget",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "React Native widget for Domix AI",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@rails/actioncable": "^8.1.300",
+    "react-native-device-info": "^11.1.0",
     "react-native-modal": "^13.0.1",
     "react-native-svg": "^15.15.4"
   },
