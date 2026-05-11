@@ -200,8 +200,26 @@ The whole example is in the `/Example` folder.
     <td> Function </td>
     <td>Callback that receives events from the widget (e.g., <code>domix:ready</code>)</td>
   </tr>
+  <tr>
+    <td>skipWelcome</td>
+    <td> false </td>
+    <td> Boolean </td>
+    <td>If true, bypasses the welcome screen and opens the chat or pre-chat form directly.</td>
+  </tr>
  </tbody>
 </table>
+
+### Key Features
+
+- **Rich Media Support**: Inline playback for Audio and Video files directly within the chat bubble.
+- **Attachments & File Sharing**: Users can upload images, videos, and documents directly from their device (Gallery, Camera, or File System).
+- **Emoji Picker**: Integrated emoji selector for more expressive conversations.
+- **Message Replies**: Tap a message to reveal the reply button and keep the conversation context.
+- **End Conversation**: Allows users to resolve conversations programmatically from the widget header (gated by server configuration).
+- **Presence Management**: Real-time "Online" status updates and presence heartbeats to keep the dashboard synced with the user's activity.
+- **Dynamic Configuration**: Automatically enables or disables features (attachments, emojis, etc.) based on your Domix AI inbox settings.
+- **White Labeling**: Dynamically uses branding from your Domix AI configuration (Inbox Avatar, Logo, Website Name, and Brand Color).
+- **Navigation Control**: Programmatically control whether users see the welcome screen or jump straight to messages.
 
 ### Methods
 

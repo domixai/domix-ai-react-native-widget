@@ -1,144 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import {
-  BG_COLOR_WHITE,
-  BG_COLOR_DARK,
-  COLOR_WHITE,
-  DOMIX_PREFIX,
-  POST_MESSAGE_EVENTS,
-} from './constants';
-
-export const isJsonString = (string) => {
-  try {
-    JSON.parse(string);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
-
-export const createDomixPostMessage = (object) => {
-  const messagePayload = JSON.stringify(`${DOMIX_PREFIX}${JSON.stringify(object)}`);
-  const script = `
-    (function() {
-      var messageData = ${messagePayload};
-      var messageEvent;
-
-      try {
-        messageEvent = new MessageEvent('message', { data: messageData });
-      } catch (error) {
-        messageEvent = document.createEvent('MessageEvent');
-        messageEvent.initMessageEvent('message', true, true, messageData, '*', '', window, null);
-      }
-
-      window.dispatchEvent(messageEvent);
-    })();
-    true;
-  `;
-  return script;
-};
-
-export const getMessage = (data) => data.replace(DOMIX_PREFIX, '');
-
-export const generateScripts = ({
-  colorScheme,
-  user,
-  locale,
-  customAttributes,
-  conversationCustomAttributes,
-}) => {
-  let script = '';
-  if (user) {
-    const userObject = {
-      event: POST_MESSAGE_EVENTS.SET_USER,
-      identifier: user.identifier || '',
-      identifier_hash: user.identifier_hash || '',
-      user,
-    };
-    script += createDomixPostMessage(userObject);
-  }
-  if (locale) {
-    const localeObject = { event: POST_MESSAGE_EVENTS.SET_LOCALE, locale };
-    script += createDomixPostMessage(localeObject);
-  }
-  if (customAttributes) {
-    const attributeObject = {
-      event: POST_MESSAGE_EVENTS.SET_CUSTOM_ATTRIBUTES,
-      customAttributes,
-    };
-    script += createDomixPostMessage(attributeObject);
-  }
-  if (conversationCustomAttributes) {
-    const conversationAttributeObject = {
-      event: POST_MESSAGE_EVENTS.SET_CONVERSATION_CUSTOM_ATTRIBUTES,
-      customAttributes: conversationCustomAttributes,
-    };
-    script += createDomixPostMessage(conversationAttributeObject);
-  }
-  if (colorScheme) {
-    const themeObject = { event: POST_MESSAGE_EVENTS.SET_COLOR_SCHEME, darkMode: colorScheme };
-    script += createDomixPostMessage(themeObject);
-  }
-  return script;
-};
-
-export const generateSetUserScript = (identifierOrUser, user) => {
-  let identifier = identifierOrUser;
-  let userData = user;
-  if (!userData && typeof identifierOrUser === 'object') {
-    userData = identifierOrUser;
-    identifier = identifierOrUser.identifier;
-  }
-  const userObject = {
-    event: POST_MESSAGE_EVENTS.SET_USER,
-    identifier: identifier || '',
-    identifier_hash: (userData && userData.identifier_hash) || '',
-    user: userData,
-  };
-  return createDomixPostMessage(userObject);
-};
-
-export const generateSetCustomAttributesScript = (customAttributes) => {
-  const attributeObject = {
-    event: POST_MESSAGE_EVENTS.SET_CUSTOM_ATTRIBUTES,
-    customAttributes,
-  };
-  return createDomixPostMessage(attributeObject);
-};
-
-export const generateSetConversationCustomAttributesScript = (conversationCustomAttributes) => {
-  const conversationAttributeObject = {
-    event: POST_MESSAGE_EVENTS.SET_CONVERSATION_CUSTOM_ATTRIBUTES,
-    customAttributes: conversationCustomAttributes,
-  };
-  return createDomixPostMessage(conversationAttributeObject);
-};
-
-export const generateSetLocaleScript = (locale) => {
-  const localeObject = { event: POST_MESSAGE_EVENTS.SET_LOCALE, locale };
-  return createDomixPostMessage(localeObject);
-};
-
-export const generateSetColorSchemeScript = (colorScheme) => {
-  const themeObject = { event: POST_MESSAGE_EVENTS.SET_COLOR_SCHEME, darkMode: colorScheme };
-  return createDomixPostMessage(themeObject);
-};
-
-export const generateSendMessageScript = (content) => {
-  const sendMessageObject = {
-    event: POST_MESSAGE_EVENTS.SEND_MESSAGE,
-    content,
-  };
-  return createDomixPostMessage(sendMessageObject);
-};
-
-export const generateResetScript = () => {
-  const resetObject = {
-    event: POST_MESSAGE_EVENTS.RESET,
-  };
-  return createDomixPostMessage(resetObject);
-};
-
 export const storeHelper = {
   getCookie: async () => {
     const cookie = await AsyncStorage.getItem('cwCookie');
@@ -150,22 +11,43 @@ export const storeHelper = {
   removeCookie: async () => {
     await AsyncStorage.removeItem('cwCookie');
   },
+  clearAll: async () => {
+    await AsyncStorage.removeItem('cwCookie');
+    // Add any other keys we might store in the future
+  },
 };
 
-export const findColors = ({ colorScheme, appColorScheme }) => {
-  let headerBackgroundColor = COLOR_WHITE;
-  let mainBackgroundColor = BG_COLOR_WHITE;
-
-  if (colorScheme === 'dark' || (colorScheme === 'auto' && appColorScheme === 'dark')) {
-    headerBackgroundColor = BG_COLOR_DARK;
-    mainBackgroundColor = BG_COLOR_DARK;
-  } else if (colorScheme === 'auto' && appColorScheme === 'light') {
-    headerBackgroundColor = COLOR_WHITE;
-    mainBackgroundColor = BG_COLOR_WHITE;
+export const isWithinWorkingHours = (config) => {
+  if (!config?.working_hours_enabled || !config?.working_hours) {
+    return true;
   }
 
-  return {
-    headerBackgroundColor,
-    mainBackgroundColor,
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
+  // Domix working_hours index: 0 is Monday, 6 is Sunday
+  // JS getDay(): 0 is Sunday, 1 is Monday...
+  const domixDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  
+  const dayConfig = config.working_hours[domixDayIndex];
+  if (!dayConfig || !dayConfig.active) {
+    return false;
+  }
+
+  const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+  
+  // Example format: "09:00"
+  const parseTime = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
   };
+
+  const startTime = parseTime(dayConfig.open_at);
+  const endTime = parseTime(dayConfig.close_at);
+
+  return currentTimeMinutes >= startTime && currentTimeMinutes <= endTime;
+};
+
+export const isArabic = (text) => {
+  const arabicPattern = /[\u0600-\u06FF]/;
+  return arabicPattern.test(text);
 };

@@ -1,6 +1,6 @@
 {
   "name": "domix-ai-react-native-widget",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "description": "React Native widget for Domix AI",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "react-native-modal": "^13.0.1"
+    "@rails/actioncable": "^8.1.300",
+    "react-native-modal": "^13.0.1",
+    "react-native-svg": "^15.15.4"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": ">=1.23.1",

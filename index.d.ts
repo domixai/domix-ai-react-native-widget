@@ -3,8 +3,8 @@ declare module 'domix-ai-react-native-widget' {
 
   export interface DomixAIWidgetProps {
     websiteToken: string;
-    locale?: string;
     baseUrl: string;
+    locale?: string;
     colorScheme?: 'light' | 'auto' | 'dark';
     closeModal: () => void;
     isModalVisible: boolean;
@@ -15,11 +15,41 @@ declare module 'domix-ai-react-native-widget' {
       email?: string;
       identifier_hash?: string;
     };
-    // This can actually be any object
     customAttributes?: Record<string, unknown>;
     onEvent?: (eventName: string, data: any) => void;
   }
 
-  class DomixAIWidget extends React.Component<DomixAIWidgetProps, any> {}
+  export class DomixAIWidget extends React.Component<DomixAIWidgetProps, any> {
+    sendMessage(content: string): void;
+    setUser(identifier: string | object, userData?: object): void;
+    fetchHistory(): void;
+    reset(): void;
+    closeModal(): void;
+  }
+
   export default DomixAIWidget;
+
+  export const DomixProvider: React.FC<{
+    websiteToken: string;
+    baseUrl: string;
+    children: React.ReactNode;
+  }>;
+
+  export function useDomix(): {
+    config: any;
+    messages: any[];
+    user: any;
+    loading: boolean;
+    error: string | null;
+    identifyUser: (userData: any) => Promise<void>;
+    fetchHistory: () => Promise<void>;
+    sendMessage: (content: string) => Promise<void>;
+  };
+
+  export const DomixClient: {
+    init(params: { websiteToken: string; baseUrl: string }): Promise<any>;
+    setUser(user: any): Promise<any>;
+    fetchMessages(): Promise<any>;
+    sendMessage(content: string): Promise<any>;
+  };
 }

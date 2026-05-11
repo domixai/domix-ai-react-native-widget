@@ -6,16 +6,31 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const App = () => {
   const widgetRef = useRef(null);
-  const [showWidget, toggleWidget] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
   const [pendingMessage, setPendingMessage] = useState('');
+  const [skipWelcomeScreen, setSkipWelcomeScreen] = useState(false);
+
+  const toggleWidget = (visible) => {
+    if (!visible) setSkipWelcomeScreen(false);
+    setShowWidget(visible);
+  };
   const [user, setUser] = useState({
-      identifier: 1234,
-      name: 'Test 1',
-      email: 'test1@domix.ai',
+      identifier: 123,
+      name: 'Test',
+      email: 'test@domix.ai',
       phone_number: '',
       identifier_hash: '',
-      description: 'customer',
+      description: '',
   });
+
+  //   const [user, setUser] = useState({
+  //     identifier: 8596,
+  //     name: "Shymaa Mohmed",
+  //     email: "shymaa.mohmed91@gmail.com",
+  //     phone_number: "+201069541592",
+  //     identifier_hash: "a00e308dc2110027877a325008978c9dc79ff4d0d46e64148e249623e2defe04",
+  //     description: 'customer',
+  // });
 
   const customAttributes = {
     accountId: 1,
@@ -30,20 +45,33 @@ const App = () => {
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 
+  const hasSentPending = useRef(false);
+
   useEffect(() => {
-    if (!showWidget || !pendingMessage || !widgetRef.current) {
+    if (!showWidget || !pendingMessage || !widgetRef.current || hasSentPending.current) {
       return;
     }
 
+    hasSentPending.current = true;
     widgetRef.current.sendMessage(pendingMessage);
     setPendingMessage('');
+    // Reset the ref after a delay or when pendingMessage is cleared
+    setTimeout(() => {
+      hasSentPending.current = false;
+    }, 1000);
   }, [showWidget, pendingMessage]);
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View>
-          <TouchableOpacity style={styles.button} onPress={() => toggleWidget(true)}>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={() => {
+              setSkipWelcomeScreen(false);
+              toggleWidget(true);
+            }}
+          >
             <Text style={styles.buttonText}>Open Domix AI Widget</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -54,6 +82,7 @@ const App = () => {
                 return;
               }
 
+              setSkipWelcomeScreen(true);
               setPendingMessage('Hello! This is a test message.');
               toggleWidget(true);
             }}>
@@ -65,6 +94,7 @@ const App = () => {
               if (widgetRef.current) {
                 widgetRef.current.reset();
               }
+              setUser(null);
               setPendingMessage('');
               toggleWidget(false);
             }}>
@@ -74,12 +104,12 @@ const App = () => {
             style={[styles.button, { marginTop: 10, backgroundColor: '#9C27B0' }]}
             onPress={() => {
               const nextUser = {
-                identifier: 123,
-                name: 'Test 2',
-                email: 'test@domix.ai',
+                identifier: 124,
+                name: 'test 2',
+                email: 'test2@domix.ai',
                 phone_number: '',
                 identifier_hash: '',
-                description: 'customer',
+                description: '',
               };
 
               setUser(nextUser);
@@ -93,6 +123,7 @@ const App = () => {
         <DomixAIWidget
           ref={widgetRef}
           websiteToken={websiteToken}
+          skipWelcome={skipWelcomeScreen}
           locale={locale}
           baseUrl={baseUrl}
           colorScheme="light"
@@ -101,11 +132,8 @@ const App = () => {
           user={user}
           customAttributes={customAttributes}
           conversationCustomAttributes={conversationCustomAttributes}
-          onEvent={(eventName, data) => {
-            console.log('Domix AI Event:', eventName, data);
-          }}
         />
-      </SafeAreaView>
+      </View>
     </SafeAreaProvider>
   );
 };

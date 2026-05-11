@@ -1,157 +1,97 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Appearance, View, Platform, StatusBar } from 'react-native';
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+/* eslint-disable */
+import React, { forwardRef, useImperativeHandle } from 'react';
+import { StyleSheet, View, Dimensions } from 'react-native';
 import Modal from 'react-native-modal';
-import PropTypes from 'prop-types';
-import { storeHelper, findColors } from './utils';
-import WebView from './WebView';
-import styles from './style';
-import { COLOR_WHITE } from './constants';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DomixProvider, useDomix } from './DomixProvider';
+import ChatWidget from './components/ChatWidget';
 
-const propTypes = {
-  isModalVisible: PropTypes.bool.isRequired,
-  websiteToken: PropTypes.string.isRequired,
-  baseUrl: PropTypes.string.isRequired,
-  cwCookie: PropTypes.string,
-  user: PropTypes.shape({
-    name: PropTypes.string,
-    avatar_url: PropTypes.string,
-    email: PropTypes.string,
-    identifier_hash: PropTypes.string,
-  }),
-  locale: PropTypes.string,
-  colorScheme: PropTypes.oneOf(['dark', 'light', 'auto']),
-  customAttributes: PropTypes.shape({}),
-  conversationCustomAttributes: PropTypes.shape({}),
-  closeModal: PropTypes.func,
-  onEvent: PropTypes.func,
-};
+const { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
 
-const DomixAIWidget = forwardRef(
-  (
-    {
-      isModalVisible,
-      baseUrl,
-      websiteToken,
-      user = null,
-      locale = 'en',
-      colorScheme = 'light',
-      customAttributes = {},
-      conversationCustomAttributes = {},
-      closeModal,
-      onEvent,
+const DomixAIWidgetContent = forwardRef(({ isModalVisible, closeModal, skipWelcome }, ref) => {
+  const { sendMessage, identifyUser, fetchHistory, config, reset } = useDomix();
+
+  useImperativeHandle(ref, () => ({
+    sendMessage: (content) => {
+      sendMessage(content);
     },
-    ref,
-  ) => {
-    const webViewRef = useRef(null);
-    const [cwCookie, setCookie] = useState('');
-    const [currentUser, setCurrentUser] = useState(user);
-    const [webViewInstanceKey, setWebViewInstanceKey] = useState(0);
-    const insets = useSafeAreaInsets();
+    setUser: (identifier, userData) => {
+      const user = userData ? { ...userData, identifier } : identifier;
+      identifyUser(user);
+    },
+    fetchHistory: () => {
+      fetchHistory();
+    },
+    closeModal: () => closeModal(),
+    reset: () => {
+      reset();
+    },
+  }));
 
-    useEffect(() => {
-      setCurrentUser(user);
-    }, [user]);
-
-    useImperativeHandle(ref, () => ({
-      sendMessage: (message) => {
-        if (webViewRef.current) {
-          webViewRef.current.sendMessage(message);
-        }
-      },
-      setUser: (identifier, userData) => {
-        if (userData) {
-          setCurrentUser({
-            ...userData,
-            identifier,
-          });
-        } else if (identifier && typeof identifier === 'object') {
-          setCurrentUser(identifier);
-        }
-
-        if (webViewRef.current) {
-          webViewRef.current.setUser(identifier, userData);
-        }
-      },
-      setCustomAttributes: (attributes) => {
-        if (webViewRef.current) {
-          webViewRef.current.setCustomAttributes(attributes);
-        }
-      },
-      setConversationCustomAttributes: (attributes) => {
-        if (webViewRef.current) {
-          webViewRef.current.setConversationCustomAttributes(attributes);
-        }
-      },
-      reset: async () => {
-        await storeHelper.removeCookie();
-        setCookie('');
-        setWebViewInstanceKey((currentKey) => currentKey + 1);
-      },
-      closeModal: () => closeModal(),
-    }));
-
-    useEffect(() => {
-      async function fetchData() {
-        const value = await storeHelper.getCookie();
-        setCookie(value);
-      }
-      fetchData();
-    }, []);
-
-    const appColorScheme = Appearance.getColorScheme();
-
-    const { headerBackgroundColor, mainBackgroundColor } = findColors({
-      colorScheme,
-      appColorScheme,
-    });
-
-    return (
-      <Modal
-        backdropColor={COLOR_WHITE}
-        coverScreen
-        isVisible={isModalVisible}
-        onBackButtonPress={closeModal}
-        onBackdropPress={closeModal}
-        style={styles.modal}
-        useNativeDriver={false}
-        statusBarTranslucent
-        propagateSwipe>
-        <View
-          style={[
-            styles.mainView,
-            {
-              backgroundColor: headerBackgroundColor,
-              paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : insets.top,
-            },
-          ]}>
-          <SafeAreaView
-            edges={['bottom', 'left', 'right']}
-            style={[styles.mainViewSafe, { backgroundColor: headerBackgroundColor }]}>
-            <View style={[styles.mainView, { backgroundColor: mainBackgroundColor }]}>
-              <WebView
-                key={webViewInstanceKey}
-                ref={webViewRef}
-                websiteToken={websiteToken}
-                cwCookie={cwCookie}
-                user={currentUser}
-                baseUrl={baseUrl}
-                locale={locale}
-                colorScheme={colorScheme}
-                customAttributes={customAttributes}
-                conversationCustomAttributes={conversationCustomAttributes}
-                onCookieChange={setCookie}
-                closeModal={closeModal}
-                onEvent={onEvent}
-              />
-            </View>
-          </SafeAreaView>
+  return (
+    <Modal
+      isVisible={isModalVisible}
+      onBackButtonPress={closeModal}
+      onBackdropPress={closeModal}
+      style={styles.modal}
+      deviceWidth={deviceWidth}
+      deviceHeight={deviceHeight}
+      statusBarTranslucent={true}
+      useNativeDriver={true}
+      useNativeDriverForBackdrop={true}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.4}
+      hideModalContentWhileAnimating={true}
+    >
+      <SafeAreaProvider>
+        <View style={styles.container}>
+          <ChatWidget isVisible={isModalVisible} onClose={closeModal} skipWelcome={skipWelcome} />
         </View>
-      </Modal>
-    );
-  },
-);
+      </SafeAreaProvider>
+    </Modal>
+  );
+});
 
-DomixAIWidget.propTypes = propTypes;
+const DomixAIWidget = forwardRef((props, ref) => {
+  const { 
+    websiteToken, 
+    baseUrl, 
+    user, 
+    locale, 
+    colorScheme, 
+    customAttributes, 
+    conversationCustomAttributes 
+  } = props;
+
+  return (
+    <SafeAreaProvider>
+      <DomixProvider 
+        websiteToken={websiteToken} 
+        baseUrl={baseUrl}
+        initialUser={user}
+        locale={locale}
+        colorScheme={colorScheme}
+        customAttributes={customAttributes}
+        conversationCustomAttributes={conversationCustomAttributes}
+        isVisible={props.isModalVisible}
+      >
+        <DomixAIWidgetContent {...props} ref={ref} />
+      </DomixProvider>
+    </SafeAreaProvider>
+  );
+});
+
+const styles = StyleSheet.create({
+  modal: {
+    margin: 0,
+    justifyContent: 'flex-end',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+});
 
 export default DomixAIWidget;
