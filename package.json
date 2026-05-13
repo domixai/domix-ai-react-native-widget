@@ -1,6 +1,6 @@
 {
   "name": "domix-ai-react-native-widget",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "React Native widget for Domix AI",
   "main": "index.js",
   "scripts": {

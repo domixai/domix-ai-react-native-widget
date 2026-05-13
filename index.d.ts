@@ -17,6 +17,12 @@ declare module 'domix-ai-react-native-widget' {
     };
     customAttributes?: Record<string, unknown>;
     onEvent?: (eventName: string, data: any) => void;
+    insets?: {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+    };
   }
 
   export class DomixAIWidget extends React.Component<DomixAIWidgetProps, any> {
