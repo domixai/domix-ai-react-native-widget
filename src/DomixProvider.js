@@ -290,10 +290,15 @@ export const DomixProvider = ({
   }, [websiteToken, baseUrl, initialUser]); // Only depend on props
   
   useEffect(() => {
+    // Initialize SDK as soon as possible (background init)
+    if (!isClientReady && !isInitializing.current && websiteToken) {
+      initSDK();
+    }
+  }, [websiteToken, isClientReady]);
+
+  useEffect(() => {
     if (isVisible) {
-      if (!isClientReady && !isInitializing.current) {
-        initSDK();
-      } else if (isClientReady && config?.contact?.pubsub_token) {
+      if (isClientReady && config?.contact?.pubsub_token) {
         // Reconnect if hidden before but now visible
         ActionCableConnector.connect(baseUrl, config.contact.pubsub_token, {
           onMessageCreated: handleNewMessage,

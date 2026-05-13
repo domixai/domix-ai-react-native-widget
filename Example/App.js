@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DomixAIWidget from 'domix-ai-react-native-widget';
-
-import { SafeAreaView, Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const App = () => {
   const widgetRef = useRef(null);
@@ -46,7 +45,7 @@ const App = () => {
     hasSentPending.current = true;
     widgetRef.current.sendMessage(pendingMessage);
     setPendingMessage('');
-    // Reset the ref after a delay or when pendingMessage is cleared
+    
     setTimeout(() => {
       hasSentPending.current = false;
     }, 1000);
@@ -54,12 +53,12 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View>
           <TouchableOpacity 
             style={styles.button} 
             onPress={() => {
-              setSkipWelcomeScreen(false);
+              // setSkipWelcomeScreen(false);
               toggleWidget(true);
             }}
           >
@@ -114,7 +113,7 @@ const App = () => {
         <DomixAIWidget
           ref={widgetRef}
           websiteToken={websiteToken}
-          skipWelcome={skipWelcomeScreen}
+          // skipWelcome={skipWelcomeScreen}
           locale={locale}
           baseUrl={baseUrl}
           colorScheme="light"
@@ -124,7 +123,7 @@ const App = () => {
           customAttributes={customAttributes}
           conversationCustomAttributes={conversationCustomAttributes}
         />
-      </View>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 };
@@ -134,43 +133,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
-  modal: {
-    flex: 1,
-    paddingVertical: 32,
-  },
-
   button: {
     height: 48,
     marginTop: 32,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
     backgroundColor: '#1F93FF',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fff',
     justifyContent: 'center',
   },
   buttonText: {
     color: '#fff',
     textAlign: 'center',
-    paddingLeft: 10,
     fontWeight: '600',
     fontSize: 16,
-    paddingRight: 10,
-  },
-  label: {
-    marginTop: 16,
-  },
-  input: {
-    height: 40,
-    width: 300,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginTop: 8,
-    fontWeight: '600',
-    fontSize: 16,
-    color: 'gray',
   },
 });
 

@@ -25,10 +25,8 @@ const ChatHeader = ({ onClose, view, onBack, showBack }) => {
 
   const replyTimeText = getReplyTimeText(config, isOnline, nextAvailableSlot, t);
 
-  const headerPaddingTop = Platform.OS === 'ios' ? insets.top : insets.top + 5;
-
   return (
-    <View style={[styles.container, { paddingTop: headerPaddingTop }]}>
+    <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.leftContainer}>
           {showBack && (
@@ -82,6 +80,7 @@ const ChatHeader = ({ onClose, view, onBack, showBack }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
+    paddingTop: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',

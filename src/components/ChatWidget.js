@@ -163,29 +163,21 @@ const ChatWidget = ({ isVisible, onClose, skipWelcome: propSkipWelcome }) => {
   };
 
   return (
-    <View style={[
-      styles.container, 
-      { 
-        paddingBottom: insets.bottom 
-      }
-    ]}>
-      {loading && messages.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={config?.widget_color || '#00CE7C'} />
-        </View>
-      ) : (
-        <>
-          <ChatHeader 
-            onClose={onClose} 
-            view={screen === 'welcome' ? 'home' : 'chat'} 
-            onBack={handleBack}
-            showBack={screen !== 'welcome' && !(propSkipWelcome ?? config?.skip_welcome_screen)}
-          />
-          <View style={styles.flex}>
-            {renderContent()}
+    <View style={styles.container}>
+      <ChatHeader 
+        onClose={onClose} 
+        view={screen === 'welcome' ? 'home' : 'chat'} 
+        onBack={handleBack}
+        showBack={screen !== 'welcome' && !(propSkipWelcome ?? config?.skip_welcome_screen)}
+      />
+      
+      <View style={styles.flex}>
+        {loading && messages.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={config?.widget_color || '#00CE7C'} />
           </View>
-        </>
-      )}
+        ) : renderContent()}
+      </View>
     </View>
   );
 };

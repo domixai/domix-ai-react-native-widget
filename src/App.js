@@ -2,7 +2,7 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import Modal from 'react-native-modal';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DomixProvider, useDomix } from './DomixProvider';
 import ChatWidget from './components/ChatWidget';
 
@@ -45,9 +45,9 @@ const DomixAIWidgetContent = forwardRef(({ isModalVisible, closeModal, skipWelco
       hideModalContentWhileAnimating={true}
     >
       <SafeAreaProvider>
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
           <ChatWidget isVisible={isModalVisible} onClose={closeModal} skipWelcome={skipWelcome} />
-        </View>
+        </SafeAreaView>
       </SafeAreaProvider>
     </Modal>
   );

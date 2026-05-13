@@ -29,7 +29,9 @@ class DomixClient {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        source_id: savedToken || undefined,
+        website_token: websiteToken,
+        identifier: contact.identifier ? String(contact.identifier) : undefined,
+        identifier_hash: contact.identifier_hash,
         contact: contact ? {
           name: contact.name,
           email: contact.email,
