@@ -23,7 +23,6 @@ const {
 } = RN;
 
 const ChatWidget = ({ isVisible, onClose, skipWelcome: propSkipWelcome }) => {
-  const insets = useSafeAreaInsets();
   const { config, loading, messages, user, isClientReady, error, baseUrl } = useDomix();
   const [screen, setScreen] = useState('welcome'); // welcome, pre_chat, chat
   const hasAutoNavigated = useRef(false);

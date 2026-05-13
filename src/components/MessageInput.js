@@ -274,7 +274,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
-    paddingBottom: Platform.OS === 'ios' ? 30 : 12,
   },
   inputWrapper: {
     flexDirection: 'row',

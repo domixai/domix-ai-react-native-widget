@@ -2,33 +2,16 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import Modal from 'react-native-modal';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DomixProvider, useDomix } from './DomixProvider';
 import ChatWidget from './components/ChatWidget';
 
 const { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
 
-const SafeView = ({ children, style, isVisible, manualInsets }) => {
-  const detectedInsets = useSafeAreaInsets();
-  const insets = manualInsets || detectedInsets;
-  
-  return (
-    <View style={[
-      style, 
-      {
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }
-    ]}>
-      {children}
-    </View>
-  );
-};
-
-const DomixAIWidgetContent = forwardRef(({ isModalVisible, closeModal, skipWelcome, insets }, ref) => {
+const DomixAIWidgetContent = forwardRef(({ isModalVisible, closeModal, skipWelcome, insets: propInsets }, ref) => {
   const { sendMessage, identifyUser, fetchHistory, config, reset } = useDomix();
+  const contextInsets = useSafeAreaInsets();
+  const insets = propInsets || contextInsets;
 
   useImperativeHandle(ref, () => ({
     sendMessage: (content) => {
@@ -63,9 +46,17 @@ const DomixAIWidgetContent = forwardRef(({ isModalVisible, closeModal, skipWelco
       backdropOpacity={0.4}
       hideModalContentWhileAnimating={true}
     >
-      <SafeView style={styles.container} isVisible={isModalVisible} manualInsets={insets}>
+      <View style={[
+        styles.container, 
+        { 
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }
+      ]}>
         <ChatWidget isVisible={isModalVisible} onClose={closeModal} skipWelcome={skipWelcome} />
-      </SafeView>
+      </View>
     </Modal>
   );
 });
@@ -78,25 +69,22 @@ const DomixAIWidget = forwardRef((props, ref) => {
     locale, 
     colorScheme, 
     customAttributes, 
-    conversationCustomAttributes,
-    insets
+    conversationCustomAttributes 
   } = props;
 
   return (
-    <SafeAreaProvider>
-      <DomixProvider 
-        websiteToken={websiteToken} 
-        baseUrl={baseUrl}
-        initialUser={user}
-        locale={locale}
-        colorScheme={colorScheme}
-        customAttributes={customAttributes}
-        conversationCustomAttributes={conversationCustomAttributes}
-        isVisible={props.isModalVisible}
-      >
-        <DomixAIWidgetContent {...props} ref={ref} insets={insets} />
-      </DomixProvider>
-    </SafeAreaProvider>
+    <DomixProvider 
+      websiteToken={websiteToken} 
+      baseUrl={baseUrl}
+      initialUser={user}
+      locale={locale}
+      colorScheme={colorScheme}
+      customAttributes={customAttributes}
+      conversationCustomAttributes={conversationCustomAttributes}
+      isVisible={props.isModalVisible}
+    >
+      <DomixAIWidgetContent {...props} ref={ref} />
+    </DomixProvider>
   );
 });
 

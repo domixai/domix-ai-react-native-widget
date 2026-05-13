@@ -31,7 +31,7 @@ const App = () => {
     orderId: 1,
     status: 'pending',
   };
-  const websiteToken = '';
+  const websiteToken = 'dKuaDr3P74hZmgyxMu5gnUGU';
   const baseUrl = 'https://chat.domix.ai';
   const [locale, setLocale] = useState('en');
 

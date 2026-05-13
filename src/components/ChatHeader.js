@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDomix } from '../DomixProvider';
 import { getReplyTimeText } from '../helpers/AvailabilityHelper';
 import { SvgXml } from 'react-native-svg';
