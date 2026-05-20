@@ -396,6 +396,7 @@ export const DomixProvider = ({
       const contentAttributes = {};
       if (replyTo) {
         contentAttributes.external_reply_id = replyTo.id;
+        contentAttributes.in_reply_to = replyTo.id;
       }
 
       const data = await DomixClient.sendMessage(content, contentAttributes, files);

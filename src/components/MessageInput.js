@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Platform, Text, ScrollView } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useDomix } from '../DomixProvider';
+import { stripMarkdown } from '../utils';
 import { Modal } from 'react-native';
 
 // Defensive imports for bare React Native pickers
@@ -151,7 +152,7 @@ const MessageInput = () => {
           <View style={styles.replyingContent}>
             <Text style={styles.replyingToLabel}>Replying to {replyTo.sender?.name || 'Agent'}:</Text>
             <Text style={styles.replyingText} numberOfLines={1}>
-              {replyTo.content || (replyTo.attachments?.length > 0 ? 'Attachment' : '')}
+              {replyTo.content ? stripMarkdown(replyTo.content) : (replyTo.attachments?.length > 0 ? 'Attachment' : '')}
             </Text>
           </View>
           <TouchableOpacity 

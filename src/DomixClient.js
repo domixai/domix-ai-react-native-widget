@@ -61,10 +61,20 @@ class DomixClient {
     return this.config;
   }
 
-  async setUser(user) {
+  async ensureAuthToken() {
+    if (!this.authToken) {
+      const savedToken = await storeHelper.getCookie();
+      if (savedToken) {
+        this.authToken = savedToken;
+      }
+    }
     if (!this.authToken) {
       throw new Error('SDK not initialized. Call init() first.');
     }
+  }
+
+  async setUser(user) {
+    await this.ensureAuthToken();
 
     console.log('Domix SDK: Setting user', user);
     const response = await fetch(`${this.baseUrl}/api/v1/widget/contact/set_user?website_token=${this.websiteToken}`, {
@@ -90,9 +100,7 @@ class DomixClient {
   }
 
   async updateContact(payload) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const response = await fetch(`${this.baseUrl}/api/v1/widget/contact?website_token=${this.websiteToken}`, {
       method: 'PATCH',
@@ -107,9 +115,7 @@ class DomixClient {
   }
 
   async fetchMessages(before = null) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const url = before 
       ? `${this.baseUrl}/api/v1/widget/messages?website_token=${this.websiteToken}&before=${before}`
@@ -127,17 +133,25 @@ class DomixClient {
   }
 
   async sendMessage(content, contentAttributes = {}, files = []) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
+    const attrs = contentAttributes || {};
+    const replyToId = attrs.external_reply_id || attrs.in_reply_to;
+
+    // Safety check: only send reply_to if it is a valid database ID (numeric)
+    const isNumericId = replyToId && /^\d+$/.test(String(replyToId));
+    const cleanReplyToId = isNumericId ? parseInt(replyToId, 10) : null;
 
     if (files.length > 0) {
       const formData = new FormData();
       formData.append('message[content]', content || '');
       formData.append('message[timestamp]', new Date().toISOString());
       
-      if (contentAttributes && Object.keys(contentAttributes).length > 0) {
-        formData.append('message[content_attributes]', JSON.stringify(contentAttributes));
+      if (cleanReplyToId) {
+        formData.append('message[reply_to]', String(cleanReplyToId));
+      }
+      
+      if (Object.keys(attrs).length > 0) {
+        formData.append('message[content_attributes]', JSON.stringify(attrs));
       }
       
       files.forEach((file) => {
@@ -168,7 +182,8 @@ class DomixClient {
         message: {
           content,
           timestamp: new Date().toISOString(),
-          content_attributes: contentAttributes,
+          content_attributes: attrs,
+          reply_to: cleanReplyToId,
         },
       }),
     });
@@ -177,9 +192,7 @@ class DomixClient {
   }
 
   async updateMessage(messageId, payload) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const response = await fetch(`${this.baseUrl}/api/v1/widget/messages/${messageId}?website_token=${this.websiteToken}`, {
       method: 'PATCH',
@@ -194,9 +207,7 @@ class DomixClient {
   }
 
   async sendInteractiveResponse(messageId, value, email = null) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     // In Domix backend, interactive responses are handled by PATCHing the message with submitted_values
     const url = `${this.baseUrl}/api/v1/widget/messages/${messageId}?website_token=${this.websiteToken}`;
@@ -234,9 +245,7 @@ class DomixClient {
   }
 
   async fetchAgents() {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const response = await fetch(`${this.baseUrl}/api/v1/widget/inbox_members?website_token=${this.websiteToken}`, {
       method: 'GET',
@@ -249,9 +258,7 @@ class DomixClient {
   }
 
   async submitCSAT(messageId, rating, feedback) {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const response = await fetch(`${this.baseUrl}/api/v1/widget/messages/${messageId}?website_token=${this.websiteToken}`, {
       method: 'PATCH',
@@ -277,9 +284,7 @@ class DomixClient {
   }
 
   async resolveConversation() {
-    if (!this.authToken) {
-      throw new Error('SDK not initialized. Call init() first.');
-    }
+    await this.ensureAuthToken();
 
     const response = await fetch(`${this.baseUrl}/api/v1/widget/conversations/toggle_status?website_token=${this.websiteToken}`, {
       method: 'GET',
@@ -298,6 +303,12 @@ class DomixClient {
   }
 
   async updateLastSeen() {
+    if (!this.authToken) {
+      const savedToken = await storeHelper.getCookie();
+      if (savedToken) {
+        this.authToken = savedToken;
+      }
+    }
     if (!this.authToken) return;
 
     try {

@@ -6,6 +6,7 @@ import { WebView } from 'react-native-webview';
 import { useDomix } from '../DomixProvider';
 import CSATSurvey from './CSATSurvey';
 import EmailCollector from './EmailCollector';
+import { parseMarkdownLinks, stripMarkdown } from '../utils';
 
 const REPLY_ICON_SVG = `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.277 16.221a.75.75 0 0 1-1.061 1.06l-4.997-5.003a.75.75 0 0 1 0-1.06L8.217 6.22a.75.75 0 0 1 1.061 1.06L5.557 11h7.842c1.595 0 2.81.242 3.889.764l.246.126a6.203 6.203 0 0 1 2.576 2.576c.61 1.14.89 2.418.89 4.135a.75.75 0 0 1-1.5 0c0-1.484-.228-2.52-.713-3.428a4.702 4.702 0 0 0-1.96-1.96c-.838-.448-1.786-.676-3.094-.709L13.4 12.5H5.562l3.715 3.721Z" fill="currentColor"></path></svg>`;
 const RESEND_ICON_SVG = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 4.75a7.25 7.25 0 1 0 7.201 6.406c-.068-.588.358-1.156.95-1.156.515 0 .968.358 1.03.87a9.25 9.25 0 1 1-3.432-6.116V4.25a1 1 0 1 1 2.001 0v2.698l.034.052h-.034v.25a1 1 0 0 1-1 1h-3a1 1 0 1 1 0-2h.666A7.219 7.219 0 0 0 12 4.75Z" fill="currentColor"></path></svg>`;
@@ -14,6 +15,39 @@ const MessageList = () => {
   const { messages, user, fetchMoreMessages, loadingMore, sendMessage, sendInteractiveResponse, config, setReplyTo, isTyping, typingUserName } = useDomix();
   const flatListRef = useRef(null);
   const [activeMessageId, setActiveMessageId] = React.useState(null);
+
+  const renderMessageContentText = (content, isMine) => {
+    const tokens = parseMarkdownLinks(content);
+    const primaryColor = config?.widget_color || '#00CE7C';
+    
+    return tokens.map((token, index) => {
+      if (token.type === 'link') {
+        return (
+          <Text
+            key={index}
+            style={[
+              isMine ? styles.myLinkText : styles.theirLinkText,
+              { color: isMine ? '#FFFFFF' : primaryColor },
+              token.isBold && { fontWeight: 'bold' }
+            ]}
+            onPress={() => Linking.openURL(token.url)}
+          >
+            {token.text}
+          </Text>
+        );
+      }
+
+      if (token.isBold) {
+        return (
+          <Text key={index} style={{ fontWeight: 'bold' }}>
+            {token.text}
+          </Text>
+        );
+      }
+
+      return token.text;
+    });
+  };
 
   const formatMessageDate = (dateString) => {
     // eslint-disable-next-line no-console
@@ -100,7 +134,7 @@ const MessageList = () => {
     }
   };
 
-  const renderAttachments = (attachments, isMine) => {
+  const renderAttachments = (attachments, isMine, hasTextOrReply) => {
     if (!attachments || attachments.length === 0) return null;
 
     return attachments.map((attachment, index) => {
@@ -113,7 +147,7 @@ const MessageList = () => {
         return (
           <TouchableOpacity 
             key={attachment.id || index} 
-            style={styles.attachmentContainer}
+            style={[styles.attachmentContainer, hasTextOrReply && { marginTop: 8 }]}
             onPress={() => Linking.openURL(fileUrl)}
             activeOpacity={0.9}
           >
@@ -148,7 +182,7 @@ const MessageList = () => {
           </html>
         `;
         return (
-          <View key={attachment.id || index} style={styles.videoAttachment}>
+          <View key={attachment.id || index} style={[styles.videoAttachment, hasTextOrReply && { marginTop: 8 }]}>
             <WebView 
               source={{ html: videoHtml }} 
               style={{ backgroundColor: '#000' }}
@@ -181,7 +215,7 @@ const MessageList = () => {
           </html>
         `;
         return (
-          <View key={attachment.id || index} style={[styles.audioAttachment, isMine && styles.myAudioAttachment]}>
+          <View key={attachment.id || index} style={[styles.audioAttachment, isMine && styles.myAudioAttachment, hasTextOrReply && { marginTop: 8 }]}>
             <WebView 
               source={{ html: audioHtml }} 
               style={{ backgroundColor: 'transparent' }}
@@ -197,7 +231,7 @@ const MessageList = () => {
       return (
         <TouchableOpacity 
           key={attachment.id || index} 
-          style={[styles.fileAttachment, isMine && styles.myFileAttachment]}
+          style={[styles.fileAttachment, isMine && styles.myFileAttachment, hasTextOrReply && { marginTop: 8 }]}
           onPress={() => Linking.openURL(fileUrl)}
         >
           <Text style={styles.fileIcon}>📄</Text>
@@ -210,33 +244,61 @@ const MessageList = () => {
     });
   };
 
+  const handleReplyPress = (externalReplyId) => {
+    if (!externalReplyId) return;
+    
+    // Find the index of the message in invertedMessages
+    const index = invertedMessages.findIndex(m => String(m.id) === String(externalReplyId));
+    if (index !== -1 && flatListRef.current) {
+      try {
+        flatListRef.current.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0.5 // Center the message on screen
+        });
+      } catch (err) {
+        console.log('Domix SDK: Scroll to index error', err);
+      }
+    }
+  };
+
   const renderReplyPreview = (externalReplyId, isMine) => {
     if (!externalReplyId) return null;
     
     // Find the message being replied to
-    const repliedMessage = messages.find(m => m.id === externalReplyId);
+    const repliedMessage = messages.find(m => String(m.id) === String(externalReplyId));
     if (!repliedMessage) return null;
 
     return (
-      <View style={[
-        styles.bubbleReplyPreview, 
-        { backgroundColor: isMine ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)' }
-      ]}>
+      <TouchableOpacity 
+        activeOpacity={0.7}
+        onPress={() => handleReplyPress(externalReplyId)}
+        style={[
+          styles.bubbleReplyPreview, 
+          { 
+            backgroundColor: isMine ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.04)',
+            borderLeftColor: isMine ? '#FFFFFF' : (config?.widget_color || '#00CE7C')
+          }
+        ]}
+      >
         <View style={styles.replyPreviewContent}>
-          <Text style={[
-            styles.replyPreviewName,
-            { color: isMine ? '#FFFFFF' : 'rgba(0,0,0,0.6)' }
-          ]} numberOfLines={1}>
-            {repliedMessage.sender?.name || 'Agent'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+            <Text style={[
+              styles.replyPreviewName,
+              { color: isMine ? '#FFFFFF' : 'rgba(0,0,0,0.7)' }
+            ]} numberOfLines={1}>
+              {repliedMessage.sender?.name || 'Agent'}
+            </Text>
+            <Text style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)', paddingHorizontal: 2 }}>↩</Text>
+          </View>
           <Text style={[
             styles.replyPreviewText,
-            { color: isMine ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.5)' }
+            { color: isMine ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.5)' }
           ]} numberOfLines={1}>
-            {repliedMessage.content || (repliedMessage.attachments?.length > 0 ? 'Attachment' : '')}
+            {repliedMessage.content ? stripMarkdown(repliedMessage.content) : (repliedMessage.attachments?.length > 0 ? 'Attachment' : '')}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -289,6 +351,10 @@ const MessageList = () => {
     
     const avatarUrl = isBot ? (config?.enabled_features?.includes('use_inbox_avatar_for_bot') ? (config?.avatar_url || config?.logo_url) : sender.avatar_url) : sender.avatar_url;
 
+    const hasText = !!(item.content && item.content_type !== 'input_csat' && item.content_type !== 'input_email');
+    const hasReply = !!(item.content_attributes?.in_reply_to || item.content_attributes?.external_reply_id);
+    const showAttachmentBubble = item.attachments?.length > 0 && !hasText && !hasReply;
+
     return (
       <View style={[styles.messageRow, isMine ? styles.myRow : styles.theirRow]}>
         {!isMine && (
@@ -313,16 +379,19 @@ const MessageList = () => {
                 isMine ? styles.myBubble : styles.theirBubble,
                 isMine && { backgroundColor: item.status === 'failed' ? '#EF4444' : (config?.widget_color || '#00CE7C') },
                 item.status === 'sending' && { opacity: 0.7 },
-                item.attachments?.length > 0 && styles.attachmentBubble
+                showAttachmentBubble && styles.attachmentBubble,
+                hasReply && styles.replyBubble
               ]}
             >
-              {item.content_attributes?.external_reply_id && renderReplyPreview(item.content_attributes.external_reply_id, isMine)}
-              {item.attachments?.length > 0 && renderAttachments(item.attachments, isMine)}
-              {item.content && item.content_type !== 'input_csat' && item.content_type !== 'input_email' && (
+              {hasReply && (
+                renderReplyPreview(item.content_attributes.in_reply_to || item.content_attributes.external_reply_id, isMine)
+              )}
+              {hasText && (
                 <Text style={[styles.text, isMine ? styles.myText : styles.theirText]}>
-                  {item.content}
+                  {renderMessageContentText(item.content, isMine)}
                 </Text>
               )}
+              {item.attachments?.length > 0 && renderAttachments(item.attachments, isMine, hasText || hasReply)}
               {item.content_attributes && renderInteractive(item.id, item.content_attributes)}
               {item.content_type === 'input_email' && (
                 <View style={styles.emailCollectorBubble}>
@@ -374,6 +443,23 @@ const MessageList = () => {
         onEndReached={fetchMoreMessages}
         onEndReachedThreshold={0.2}
         ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.loader} /> : null}
+        onScrollToIndexFailed={(info) => {
+          flatListRef.current?.scrollToOffset({
+            offset: info.highestMeasuredFrameIndex * 80,
+            animated: true,
+          });
+          setTimeout(() => {
+            try {
+              flatListRef.current?.scrollToIndex({
+                index: info.index,
+                animated: true,
+                viewPosition: 0.5
+              });
+            } catch (err) {
+              console.log('Domix SDK: Scroll to index failed after layout', err);
+            }
+          }, 100);
+        }}
       />
       {isTyping && (
         <View style={styles.typingIndicator}>
@@ -475,14 +561,16 @@ const styles = StyleSheet.create({
   },
   bubbleReplyPreview: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 10,
+    borderRadius: 8,
     padding: 8,
     marginBottom: 6,
-    marginHorizontal: 4,
-    marginTop: 4,
+    marginHorizontal: 2,
+    marginTop: 2,
     borderLeftWidth: 3,
-    borderLeftColor: 'rgba(0,0,0,0.2)',
+  },
+  replyBubble: {
+    minWidth: 220,
+    maxWidth: '100%',
   },
   replyPreviewBar: {
     display: 'none', // Using borderLeft instead
@@ -545,6 +633,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     fontStyle: 'italic',
+  },
+  myLinkText: {
+    textDecorationLine: 'underline',
+  },
+  theirLinkText: {
+    textDecorationLine: 'underline',
   },
 });
 
