@@ -69,6 +69,7 @@ const DomixAIWidget = forwardRef((props, ref) => {
     locale, 
     colorScheme, 
     customAttributes, 
+    additionalAttributes,
     conversationCustomAttributes 
   } = props;
 
@@ -80,6 +81,7 @@ const DomixAIWidget = forwardRef((props, ref) => {
       locale={locale}
       colorScheme={colorScheme}
       customAttributes={customAttributes}
+      additionalAttributes={additionalAttributes}
       conversationCustomAttributes={conversationCustomAttributes}
       isVisible={props.isModalVisible}
     >

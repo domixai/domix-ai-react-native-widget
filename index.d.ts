@@ -14,8 +14,10 @@ declare module 'domix-ai-react-native-widget' {
       avatar_url?: string;
       email?: string;
       identifier_hash?: string;
+      additional_attributes?: Record<string, unknown>;
     };
     customAttributes?: Record<string, unknown>;
+    additionalAttributes?: Record<string, unknown>;
     onEvent?: (eventName: string, data: any) => void;
   }
 

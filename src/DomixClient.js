@@ -30,8 +30,8 @@ class DomixClient {
       },
       body: JSON.stringify({
         website_token: websiteToken,
-        identifier: contact.identifier ? String(contact.identifier) : undefined,
-        identifier_hash: contact.identifier_hash,
+        identifier: contact?.identifier ? String(contact.identifier) : undefined,
+        identifier_hash: contact?.identifier_hash,
         contact: contact ? {
           name: contact.name,
           email: contact.email,
@@ -39,6 +39,7 @@ class DomixClient {
           identifier_hash: contact.identifier_hash,
           phone_number: contact.phone_number,
           custom_attributes: contact.custom_attributes,
+          additional_attributes: contact.additional_attributes,
         } : undefined
       }),
     });

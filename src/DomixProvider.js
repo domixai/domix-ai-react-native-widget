@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { Platform } from 'react-native';
 import DomixClient from './DomixClient';
 import ActionCableConnector from './ActionCableConnector';
 import { storeHelper } from './utils';
@@ -51,10 +52,57 @@ export const DomixProvider = ({
   locale = 'en', 
   colorScheme = 'light',
   customAttributes = {},
+  additionalAttributes = {},
   conversationCustomAttributes = {},
   skipWelcome = false,
   isVisible
 }) => {
+  // Merge additionalAttributes into the initial user so that it's sent during initSDK
+  const mergedInitialUser = useMemo(() => {
+    const constants = Platform.constants || {};
+    
+    const manufacturer = constants.Manufacturer || (Platform.OS === 'ios' ? 'Apple' : 'Unknown');
+    const model = constants.Model || (Platform.OS === 'ios' ? (Platform.isPad ? 'iPad' : 'iPhone') : 'Unknown');
+    const deviceName = Platform.OS === 'ios' 
+      ? `Apple ${model}`
+      : (constants.Manufacturer ? `${constants.Manufacturer} ${model}` : model);
+
+    const autoBrowserInfo = {
+      browser_name: 'React Native App',
+      browser_version: '1.0',
+      device_name: deviceName,
+      platform_name: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      platform_version: String(constants.Release || constants.osVersion || Platform.Version || '0.0'),
+      model: model,
+      manufacturer: manufacturer,
+    };
+    
+    if (Platform.OS === 'android') {
+      autoBrowserInfo.osVersionCode = String(Platform.Version);
+    }
+
+    const mergedAdditionalAttrs = {
+      ...additionalAttributes,
+      ...(initialUser?.additional_attributes || {}),
+      browser: {
+        ...autoBrowserInfo,
+        ...(additionalAttributes?.browser || {}),
+        ...(initialUser?.additional_attributes?.browser || {})
+      }
+    };
+
+    const mergedCustomAttrs = {
+      ...customAttributes,
+      ...(initialUser?.custom_attributes || {})
+    };
+
+    return {
+      ...(initialUser || {}),
+      additional_attributes: mergedAdditionalAttrs,
+      custom_attributes: mergedCustomAttrs
+    };
+  }, [initialUser, additionalAttributes, customAttributes]);
+
   const [config, setConfig] = useState(null);
   const [messages, setMessages] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -160,11 +208,17 @@ export const DomixProvider = ({
   const identifyUser = useCallback(async (userData, retryCount = 0) => {
     if (!DomixClient.authToken) return;
     try {
+      const constants = Platform.constants || {};
+
       const payload = {
         ...userData,
         custom_attributes: {
           ...customAttributes,
           ...(userData.custom_attributes || {})
+        },
+        additional_attributes: {
+          ...additionalAttributes,
+          ...(userData.additional_attributes || {})
         }
       };
 
@@ -183,7 +237,7 @@ export const DomixProvider = ({
         await fetchHistory();
       }
     }
-  }, [customAttributes, fetchHistory]); // REMOVED 'user' dependency to break the loop
+  }, [customAttributes, additionalAttributes, fetchHistory]); // REMOVED 'user' dependency to break the loop
 
   const initSDK = useCallback(async () => {
     if (isInitializing.current) return;
@@ -194,7 +248,7 @@ export const DomixProvider = ({
       const configData = await DomixClient.init({ 
         websiteToken, 
         baseUrl, 
-        contact: initialUser 
+        contact: mergedInitialUser 
       });
       setConfig(configData);
       if (configData.contact) {
@@ -207,7 +261,7 @@ export const DomixProvider = ({
       setAgents(agentsList);
 
       if (initialUser) {
-        await identifyUser(initialUser);
+        await identifyUser(mergedInitialUser);
       } else {
         await fetchHistory();
       }
@@ -287,7 +341,7 @@ export const DomixProvider = ({
       setLoading(false);
       isInitializing.current = false;
     }
-  }, [websiteToken, baseUrl, initialUser]); // Only depend on props
+  }, [websiteToken, baseUrl, mergedInitialUser]); // Only depend on props
   
   useEffect(() => {
     // Initialize SDK as soon as possible (background init)
@@ -367,7 +421,7 @@ export const DomixProvider = ({
     return () => {
       if (presenceInterval) clearInterval(presenceInterval);
     };
-  }, [websiteToken, baseUrl, initialUser, isClientReady, isVisible, config?.contact?.pubsub_token]);
+  }, [websiteToken, baseUrl, mergedInitialUser, isClientReady, isVisible, config?.contact?.pubsub_token]);
 
   const sendMessage = async (content, isRetryId = null, files = []) => {
     const tempId = isRetryId || `temp-${Date.now()}`;
