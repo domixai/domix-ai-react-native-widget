@@ -113,6 +113,8 @@ const App = () => {
         <DomixAIWidget
           ref={widgetRef}
           websiteToken={websiteToken}
+          appName="Domix"
+          appVersion="1.2.3"
           // skipWelcome={skipWelcomeScreen}
           locale={locale}
           baseUrl={baseUrl}

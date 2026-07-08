@@ -89,6 +89,8 @@ const App = () => {
           customAttributes={customAttributes}
           conversationCustomAttributes={conversationCustomAttributes}
           colorScheme={colorScheme}
+          appName="My App Name"
+          appVersion="1.0.0"
           onEvent={(eventName, data) => {
             console.log(eventName, data);
           }}
@@ -205,6 +207,18 @@ The whole example is in the `/Example` folder.
     <td> false </td>
     <td> Boolean </td>
     <td>If true, bypasses the welcome screen and opens the chat or pre-chat form directly.</td>
+  </tr>
+  <tr>
+    <td>appName</td>
+    <td> 'React Native App' </td>
+    <td> String </td>
+    <td>Optional name of the application to send in browser_name analytics.</td>
+  </tr>
+  <tr>
+    <td>appVersion</td>
+    <td> Device OS Version </td>
+    <td> String </td>
+    <td>Optional version of the application to send in browser_version analytics.</td>
   </tr>
  </tbody>
 </table>

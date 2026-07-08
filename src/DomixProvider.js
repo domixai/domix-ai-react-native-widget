@@ -55,7 +55,9 @@ export const DomixProvider = ({
   additionalAttributes = {},
   conversationCustomAttributes = {},
   skipWelcome = false,
-  isVisible
+  isVisible,
+  appName,
+  appVersion
 }) => {
   // Merge additionalAttributes into the initial user so that it's sent during initSDK
   const mergedInitialUser = useMemo(() => {
@@ -68,8 +70,8 @@ export const DomixProvider = ({
       : (constants.Manufacturer ? `${constants.Manufacturer} ${model}` : model);
 
     const autoBrowserInfo = {
-      browser_name: 'React Native App',
-      browser_version: '1.0',
+      browser_name: appName || 'React Native App',
+      browser_version: appVersion || String(constants.Release || constants.osVersion || Platform.Version || '0.0'),
       device_name: deviceName,
       platform_name: Platform.OS === 'ios' ? 'iOS' : 'Android',
       platform_version: String(constants.Release || constants.osVersion || Platform.Version || '0.0'),
@@ -101,7 +103,7 @@ export const DomixProvider = ({
       additional_attributes: mergedAdditionalAttrs,
       custom_attributes: mergedCustomAttrs
     };
-  }, [initialUser, additionalAttributes, customAttributes]);
+  }, [JSON.stringify(initialUser), JSON.stringify(additionalAttributes), JSON.stringify(customAttributes), appName, appVersion]);
 
   const [config, setConfig] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -421,7 +423,7 @@ export const DomixProvider = ({
     return () => {
       if (presenceInterval) clearInterval(presenceInterval);
     };
-  }, [websiteToken, baseUrl, mergedInitialUser, isClientReady, isVisible, config?.contact?.pubsub_token]);
+  }, [websiteToken, baseUrl, isClientReady, isVisible, config?.contact?.pubsub_token]);
 
   const sendMessage = async (content, isRetryId = null, files = []) => {
     const tempId = isRetryId || `temp-${Date.now()}`;
