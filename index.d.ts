@@ -18,6 +18,8 @@ declare module 'domix-ai-react-native-widget' {
     };
     customAttributes?: Record<string, unknown>;
     additionalAttributes?: Record<string, unknown>;
+    appName?: string;
+    appVersion?: string;
     onEvent?: (eventName: string, data: any) => void;
   }
 
