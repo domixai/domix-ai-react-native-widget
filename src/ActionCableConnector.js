@@ -22,6 +22,8 @@ class ActionCableConnector {
     this.onTypingOff = null;
     this.onContactMerged = null;
     this.onConversationCreated = null;
+    this.disconnectTimeout = null;
+    this.currentPubsubToken = null;
   }
 
   connect(baseUrl, pubsubToken, callbacks) {
@@ -34,10 +36,22 @@ class ActionCableConnector {
     this.onContactMerged = callbacks.onContactMerged;
     this.onConversationCreated = callbacks.onConversationCreated;
 
+    if (this.disconnectTimeout) {
+      clearTimeout(this.disconnectTimeout);
+      this.disconnectTimeout = null;
+    }
+
+    // Prevent reconnect loop if already connected to the same token
+    if (this.consumer && this.currentPubsubToken === pubsubToken) {
+      return;
+    }
+
+    this.currentPubsubToken = pubsubToken;
+
     const cableUrl = `${baseUrl.replace('https', 'wss').replace('http', 'ws')}/cable?pubsub_token=${pubsubToken}`;
     
     if (this.consumer) {
-      this.disconnect();
+      this.forceDisconnect();
     }
 
     this.consumer = createConsumer(cableUrl);
@@ -114,6 +128,17 @@ class ActionCableConnector {
   }
 
   disconnect() {
+    // Debounce disconnect to prevent rapid reconnect loops
+    if (this.disconnectTimeout) {
+      clearTimeout(this.disconnectTimeout);
+    }
+    this.disconnectTimeout = setTimeout(() => {
+      this.forceDisconnect();
+      this.disconnectTimeout = null;
+    }, 5000); // 5 seconds delay
+  }
+
+  forceDisconnect() {
     try {
       if (this.subscription) {
         this.subscription.unsubscribe();
@@ -123,6 +148,7 @@ class ActionCableConnector {
         this.consumer.disconnect();
         this.consumer = null;
       }
+      this.currentPubsubToken = null;
     } catch (e) {
       console.warn('Domix SDK: ActionCable disconnect error', e);
     }

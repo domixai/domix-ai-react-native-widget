@@ -7,6 +7,7 @@ class DomixClient {
     this.baseUrl = null;
     this.authToken = null;
     this.config = null;
+    this.lastSeenUpdatedTime = 0;
   }
 
   async init({ websiteToken, baseUrl, contact }) {
@@ -311,6 +312,11 @@ class DomixClient {
       }
     }
     if (!this.authToken) return;
+
+    const now = Date.now();
+    // Throttle to prevent API loop (max 1 request per 10 seconds)
+    if (now - this.lastSeenUpdatedTime < 10000) return;
+    this.lastSeenUpdatedTime = now;
 
     try {
       await fetch(`${this.baseUrl}/api/v1/widget/conversations/update_last_seen?website_token=${this.websiteToken}`, {
