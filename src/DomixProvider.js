@@ -57,7 +57,8 @@ export const DomixProvider = ({
   skipWelcome = false,
   isVisible,
   appName,
-  appVersion
+  appVersion,
+  hmacMandatory = false
 }) => {
   // Merge additionalAttributes into the initial user so that it's sent during initSDK
   const mergedInitialUser = useMemo(() => {
@@ -209,6 +210,15 @@ export const DomixProvider = ({
 
   const identifyUser = useCallback(async (userData, retryCount = 0) => {
     if (!DomixClient.authToken) return;
+
+    const isHmacMandatory = hmacMandatory || config?.hmac_mandatory;
+    const hasIdentityData = userData?.identifier || userData?.email || userData?.phone_number || userData?.name;
+    
+    if (isHmacMandatory && hasIdentityData && (!userData?.identifier || !userData?.identifier_hash)) {
+      console.error('Domix SDK: Identity validation failed. HMAC is mandatory. You must provide both an identifier and identifier_hash when passing user data.');
+      return;
+    }
+
     try {
       const constants = Platform.constants || {};
 
@@ -252,6 +262,14 @@ export const DomixProvider = ({
         baseUrl, 
         contact: mergedInitialUser 
       });
+      
+      const isHmacMandatory = hmacMandatory || configData?.hmac_mandatory;
+      
+      const hasIdentityData = mergedInitialUser?.identifier || mergedInitialUser?.email || mergedInitialUser?.phone_number || mergedInitialUser?.name;
+      if (isHmacMandatory && hasIdentityData && (!mergedInitialUser?.identifier || !mergedInitialUser?.identifier_hash)) {
+        throw new Error('Identity validation failed. HMAC is mandatory. You must provide both an identifier and identifier_hash when passing user data.');
+      }
+      
       setConfig(configData);
       if (configData.contact) {
         setUser(configData.contact);

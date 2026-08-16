@@ -72,7 +72,8 @@ const DomixAIWidget = forwardRef((props, ref) => {
     additionalAttributes,
     conversationCustomAttributes,
     appName,
-    appVersion
+    appVersion,
+    hmacMandatory
   } = props;
 
   return (
@@ -88,6 +89,7 @@ const DomixAIWidget = forwardRef((props, ref) => {
       isVisible={props.isModalVisible}
       appName={appName}
       appVersion={appVersion}
+      hmacMandatory={hmacMandatory}
     >
       <DomixAIWidgetContent {...props} ref={ref} />
     </DomixProvider>

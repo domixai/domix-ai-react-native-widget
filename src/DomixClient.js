@@ -46,6 +46,10 @@ class DomixClient {
     });
 
     const data = await response.json();
+    if (!response.ok) {
+      console.error('Domix SDK: Config fetch failed', data);
+      throw new Error(data.error || data.message || 'Failed to initialize widget configuration');
+    }
     console.log('Domix SDK: Config fetched', data);
     this.config = {
       ...data.website_channel_config,

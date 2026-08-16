@@ -81,18 +81,18 @@ const ChatWidget = ({ isVisible, onClose, skipWelcome: propSkipWelcome }) => {
         <MessageList />
         <MessageInput />
         {!config?.disable_branding && (
-          <RN.TouchableOpacity 
-            style={styles.brandingContainerSmall} 
-            onPress={() => {
-              let url = config?.global_config?.WIDGET_BRAND_URL;
-              if (url) {
-                if (!url.startsWith('http')) url = 'https://' + url;
-                RN.Linking.openURL(url);
-              }
-            }}
-          >
+          <RN.View style={styles.brandingContainerSmall}>
             <RN.Text style={styles.poweredByTextSmall}>Powered by</RN.Text>
-            <RN.View style={styles.brandInfoSmall}>
+            <RN.TouchableOpacity 
+              style={styles.brandInfoSmall}
+              onPress={() => {
+                let url = config?.global_config?.WIDGET_BRAND_URL;
+                if (url) {
+                  if (!url.startsWith('http')) url = 'https://' + url;
+                  RN.Linking.openURL(url);
+                }
+              }}
+            >
               {config?.global_config?.LOGO_THUMBNAIL && (
                 <RN.Image 
                   source={{ uri: getImageUrl(config.global_config.LOGO_THUMBNAIL) }} 
@@ -102,8 +102,8 @@ const ChatWidget = ({ isVisible, onClose, skipWelcome: propSkipWelcome }) => {
               <RN.Text style={styles.brandNameTextSmall}>
                 {config?.global_config?.BRAND_NAME || 'Domix.ai'}
               </RN.Text>
-            </RN.View>
-          </RN.TouchableOpacity>
+            </RN.TouchableOpacity>
+          </RN.View>
         )}
       </View>
     );
@@ -135,13 +135,16 @@ const ChatWidget = ({ isVisible, onClose, skipWelcome: propSkipWelcome }) => {
     }
 
     if (error && !isClientReady) {
+      const isIdentityError = error.includes('Identity validation failed');
       return (
         <View style={styles.center}>
-          <Text style={styles.errorText}>Connection Error</Text>
+          <Text style={styles.errorText}>{isIdentityError ? 'Authentication Failed' : 'Connection Error'}</Text>
           <Text style={styles.errorSubtext}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => RN.DevSettings?.reload()}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          {!isIdentityError && (
+            <TouchableOpacity style={styles.retryButton} onPress={() => RN.DevSettings?.reload()}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          )}
         </View>
       );
     }
